@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import ReactPDF from '@react-pdf/renderer'
+import { renderToStream } from '@react-pdf/renderer'
 import { MaintenancePDFDocument } from '@/lib/formia-pdf'
 import React from 'react'
 
@@ -8,7 +8,13 @@ export async function POST(request) {
     const { formData, entity, documentType } = await request.json()
 
     const pdfDoc = React.createElement(MaintenancePDFDocument, { formData, entity })
-    const pdfBuffer = await ReactPDF.renderToBuffer(pdfDoc)
+    const stream = await renderToStream(pdfDoc)
+    
+    const chunks = []
+    for await (const chunk of stream) {
+      chunks.push(chunk)
+    }
+    const pdfBuffer = Buffer.concat(chunks)
 
     return new NextResponse(pdfBuffer, {
       headers: {
