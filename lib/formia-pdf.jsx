@@ -268,7 +268,7 @@ export function MaintenancePDFDocument({ formData, entity }) {
           <View style={styles.photosGrid}>
             {formData.photosAvant.slice(0, 4).map((photo, index) => (
               <View key={index} style={styles.photoContainer}>
-                <Image src={photo.preview || photo.url} style={styles.photo} />
+                <Image src={photo.base64 || photo.preview || photo.url} style={styles.photo} />
               </View>
             ))}
           </View>
@@ -320,7 +320,7 @@ export function MaintenancePDFDocument({ formData, entity }) {
           {formData.transformateur.photo && (
             <View style={{ marginTop: 20 }}>
               <Image 
-                src={formData.transformateur.photo.preview || formData.transformateur.photo.url} 
+                src={formData.transformateur.photo.base64 || formData.transformateur.photo.preview || formData.transformateur.photo.url} 
                 style={{ width: 250, height: 200, objectFit: 'contain' }}
               />
             </View>
@@ -387,5 +387,8 @@ export function MaintenancePDFDocument({ formData, entity }) {
         </Page>
       )}
     </Document>
+  )
+}
+>
   )
 }

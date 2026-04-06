@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Download, ArrowLeft, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
+import { convertFormPhotosToBase64 } from '@/lib/formia-utils'
 
 export function PDFPreview({ formData, entity, documentType, onBack }) {
   const [generating, setGenerating] = useState(false)
@@ -13,10 +14,13 @@ export function PDFPreview({ formData, entity, documentType, onBack }) {
   const handleGeneratePDF = async () => {
     setGenerating(true)
     try {
+      // Convertir toutes les photos en base64
+      const formDataWithBase64 = await convertFormPhotosToBase64(formData)
+      
       const response = await fetch('/api/formia/generate-pdf', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ formData, entity, documentType })
+        body: JSON.stringify({ formData: formDataWithBase64, entity, documentType })
       })
 
       if (!response.ok) throw new Error('PDF generation failed')
