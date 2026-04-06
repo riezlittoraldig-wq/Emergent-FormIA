@@ -1,1 +1,26 @@
-import { NextResponse } from 'next/server'\nimport ReactPDF from '@react-pdf/renderer'\nimport { MaintenancePDFDocument } from '@/lib/formia-pdf'\nimport React from 'react'\n\nexport async function POST(request) {\n  try {\n    const { formData, entity, documentType } = await request.json()\n\n    // Generate PDF\n    const pdfDoc = React.createElement(MaintenancePDFDocument, { formData, entity })\n    const pdfBuffer = await ReactPDF.renderToBuffer(pdfDoc)\n\n    // Return PDF as blob\n    return new NextResponse(pdfBuffer, {\n      headers: {\n        'Content-Type': 'application/pdf',\n        'Content-Disposition': `attachment; filename=\"Rapport_${formData.documentNumber}.pdf\"`\n      }\n    })\n  } catch (error) {\n    console.error('PDF generation error:', error)\n    return NextResponse.json(\n      { error: 'Failed to generate PDF', details: error.message },\n      { status: 500 }\n    )\n  }\n}\n
+import { NextResponse } from 'next/server'
+import ReactPDF from '@react-pdf/renderer'
+import { MaintenancePDFDocument } from '@/lib/formia-pdf'
+import React from 'react'
+
+export async function POST(request) {
+  try {
+    const { formData, entity, documentType } = await request.json()
+
+    const pdfDoc = React.createElement(MaintenancePDFDocument, { formData, entity })
+    const pdfBuffer = await ReactPDF.renderToBuffer(pdfDoc)
+
+    return new NextResponse(pdfBuffer, {
+      headers: {
+        'Content-Type': 'application/pdf',
+        'Content-Disposition': `attachment; filename="Rapport_${formData.documentNumber}.pdf"`
+      }
+    })
+  } catch (error) {
+    console.error('PDF generation error:', error)
+    return NextResponse.json(
+      { error: 'Failed to generate PDF', details: error.message },
+      { status: 500 }
+    )
+  }
+}
