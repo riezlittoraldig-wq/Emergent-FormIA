@@ -1,0 +1,63 @@
+#!/bin/bash
+
+echo "==================================="
+echo "FormIA - Vérification Configuration"
+echo "==================================="
+echo ""
+
+# Check .env
+echo "1. Vérification des variables d'environnement..."
+if grep -q "NEXT_PUBLIC_SUPABASE_URL" /app/.env && grep -q "NEXT_PUBLIC_SUPABASE_ANON_KEY" /app/.env; then
+    echo "✅ Variables Supabase configurées dans .env"
+else
+    echo "❌ Variables Supabase manquantes dans .env"
+    exit 1
+fi
+
+# Check Supabase connection
+echo ""
+echo "2. Test de connexion Supabase..."
+echo "   URL: $(grep NEXT_PUBLIC_SUPABASE_URL /app/.env | cut -d'=' -f2)"
+echo "   (Vérifiez manuellement dans le dashboard Supabase)"
+
+echo ""
+echo "==================================="
+echo "Étapes de configuration restantes:"
+echo "==================================="
+echo ""
+echo "📋 ÉTAPE 1: Créer les tables dans Supabase"
+echo "   1. Allez sur https://supabase.com/dashboard"
+echo "   2. Sélectionnez votre projet"
+echo "   3. SQL Editor > Nouvelle requête"
+echo "   4. Copiez le contenu de: /app/lib/formia-schema.sql"
+echo "   5. Exécutez (Run)"
+echo ""
+echo "📦 ÉTAPE 2: Créer le bucket de stockage"
+echo "   1. Storage > New bucket"
+echo "   2. Nom: formia-assets"
+echo "   3. Public: ✅ Activé"
+echo "   4. Create bucket"
+echo "   5. Dans formia-assets, créez 2 dossiers:"
+echo "      - logos/"
+echo "      - photos/"
+echo ""
+echo "🖼️  ÉTAPE 3: Uploader le logo ALLEZ ENERGIES"
+echo "   1. Storage > formia-assets > logos"
+echo "   2. Upload votre logo (renommer: allez-energies-logo.png)"
+echo "   3. Copiez l'URL publique"
+echo "   4. SQL Editor, exécutez:"
+echo "      UPDATE formia_entities"
+echo "      SET logo_url = 'VOTRE_URL_ICI'"
+echo "      WHERE name = 'ALLEZ ENERGIES';"
+echo ""
+echo "✅ ÉTAPE 4: Vérifier"
+echo "   Exécutez dans SQL Editor:"
+echo "      SELECT * FROM formia_entities;"
+echo "      SELECT * FROM formia_document_types;"
+echo ""
+echo "🚀 ÉTAPE 5: Accéder à FormIA"
+echo "   https://taskia-pdf-builder.preview.emergentagent.com/formia"
+echo ""
+echo "==================================="
+echo "Documentation complète: /app/FORMIA_README.md"
+echo "==================================="
