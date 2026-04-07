@@ -11,6 +11,8 @@ import { FileText, Building2, Loader2 } from 'lucide-react'
 export default function FormIAPage() {
   const [entities, setEntities] = useState([])
   const [selectedEntity, setSelectedEntity] = useState(null)
+  const [agencies, setAgencies] = useState([])
+  const [selectedAgency, setSelectedAgency] = useState(null)
   const [documentTypes, setDocumentTypes] = useState([])
   const [selectedDocType, setSelectedDocType] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -39,12 +41,32 @@ export default function FormIAPage() {
       const allezEnergies = entitiesData?.find(e => e.name === 'ALLEZ ENERGIES')
       if (allezEnergies) {
         setSelectedEntity(allezEnergies)
-        setStep('select-type')
+        await loadAgencies(allezEnergies.id)
       }
     } catch (error) {
       console.error('Error loading data:', error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const loadAgencies = async (entityId) => {
+    try {
+      const { data } = await supabase
+        .from('formia_agencies')
+        .select('*')
+        .eq('entity_id', entityId)
+        .order('name')
+      
+      setAgencies(data || [])
+      if (data && data.length > 0) {
+        setStep('select-agency')
+      } else {
+        setStep('select-type')
+      }
+    } catch (error) {
+      console.error('Error loading agencies:', error)
+      setStep('select-type')
     }
   }
 
@@ -112,6 +134,61 @@ export default function FormIAPage() {
           </div>
         )}
 
+        {step === 'select-agency' && selectedEntity && agencies.length > 0 && (
+          <div className="max-w-4xl mx-auto">
+            <Card className="shadow-lg border-0">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2 text-2xl">
+                      <Building2 className="w-6 h-6 text-red-600" />
+                      Sélectionnez une agence
+                    </CardTitle>
+                    <CardDescription>Entité: {selectedEntity.name}</CardDescription>
+                  </div>
+                  <Button variant="outline" onClick={() => {
+                    setSelectedEntity(null)
+                    setSelectedAgency(null)
+                    setAgencies([])
+                    setStep('select-entity')
+                  }}>Changer d'entité</Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-4">
+                  {agencies.map(agency => (
+                    <Card 
+                      key={agency.id}
+                      className="cursor-pointer hover:shadow-md transition-shadow border-2 hover:border-red-600"
+                      onClick={() => {
+                        setSelectedAgency(agency)
+                        setStep('select-type')
+                      }}
+                    >
+                      <CardContent className="p-6">
+                        <div>
+                          <h3 className="font-semibold text-lg">{agency.name}</h3>
+                          {agency.code && (
+                            <p className="text-sm text-slate-600">Code: {agency.code}</p>
+                          )}
+                          {agency.address && (
+                            <p className="text-sm text-slate-600">
+                              {agency.address}, {agency.postal_code} {agency.city}
+                            </p>
+                          )}
+                          {agency.phone && (
+                            <p className="text-sm text-slate-600">Tél: {agency.phone}</p>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
         {step === 'select-type' && selectedEntity && (
           <div className="max-w-4xl mx-auto">
             <Card className="shadow-lg border-0">
@@ -122,9 +199,19 @@ export default function FormIAPage() {
                       <FileText className="w-6 h-6 text-red-600" />
                       Type de document
                     </CardTitle>
-                    <CardDescription>Entité sélectionnée: {selectedEntity.name}</CardDescription>
+                    <CardDescription>
+                      {selectedEntity.name}
+                      {selectedAgency && ` - ${selectedAgency.name}`}
+                    </CardDescription>
                   </div>
-                  <Button variant="outline" onClick={() => setStep('select-entity')}>Changer d'entité</Button>
+                  <Button variant="outline" onClick={() => {
+                    if (agencies.length > 0) {
+                      setSelectedAgency(null)
+                      setStep('select-agency')
+                    } else {
+                      setStep('select-entity')
+                    }
+                  }}>Retour</Button>
                 </div>
               </CardHeader>
               <CardContent>
@@ -161,7 +248,8 @@ export default function FormIAPage() {
             
             {selectedDocType.slug === 'maintenance-ht-bt' && (
               <MaintenanceHTBTForm 
-                entity={selectedEntity} 
+                entity={selectedEntity}
+                agency={selectedAgency}
                 documentType={selectedDocType}
                 onBack={() => setStep('select-type')}
               />

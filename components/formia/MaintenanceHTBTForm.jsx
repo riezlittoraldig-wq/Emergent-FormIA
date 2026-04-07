@@ -12,19 +12,21 @@ import { CelluleProtectionSection } from './CelluleProtectionSection'
 import { DisjoncteurGeneralSection } from './DisjoncteurGeneralSection'
 import { TableauControlesSection } from './TableauControlesSection'
 import { ObservationsSignaturesSection } from './ObservationsSignaturesSection'
+import { ChantierSearch } from './ChantierSearch'
 import { PDFPreview } from './PDFPreview'
 import { supabase } from '@/lib/formia-supabase'
 import { TABLEAUX_CONTROLES } from '@/lib/formia-config'
 import { Save, FileDown, Eye, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 
-export function MaintenanceHTBTForm({ entity, documentType, onBack }) {
+export function MaintenanceHTBTForm({ entity, agency, documentType, onBack }) {
   const [activeTab, setActiveTab] = useState('general')
   const [saving, setSaving] = useState(false)
   const [showPreview, setShowPreview] = useState(false)
   
   const [formData, setFormData] = useState({
     documentNumber: `${Date.now()}`,
+    codeChantier: '',
     clientName: '',
     numeroAffaire: '',
     date: new Date().toISOString().split('T')[0],
@@ -35,6 +37,8 @@ export function MaintenanceHTBTForm({ entity, documentType, onBack }) {
     address: '',
     postalCode: '',
     city: '',
+    responsableAffaire: '',
+    emailsDestinataires: [],
     photosAvant: [],
     transformateur: {
       marque: '',
@@ -76,6 +80,29 @@ export function MaintenanceHTBTForm({ entity, documentType, onBack }) {
 
   const updateFormData = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }))
+  }
+
+  const handleChantierSelect = (chantier) => {
+    if (chantier) {
+      setFormData(prev => ({
+        ...prev,
+        codeChantier: chantier.code_chantier,
+        clientName: chantier.client_name,
+        numeroAffaire: chantier.code_chantier,
+        address: chantier.address,
+        postalCode: chantier.postal_code,
+        city: chantier.city,
+        responsableAffaire: chantier.responsable_affaire || '',
+        emailsDestinataires: chantier.emails || []
+      }))
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        codeChantier: '',
+        responsableAffaire: '',
+        emailsDestinataires: []
+      }))
+    }
   }
 
   const addCelluleProtection = () => {
@@ -194,6 +221,19 @@ export function MaintenanceHTBTForm({ entity, documentType, onBack }) {
                   <CardDescription>Remplissez les informations de base du rapport</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
+                  {/* Recherche de chantier pour auto-remplissage */}
+                  <div className="border-b pb-6">
+                    <h3 className="font-semibold mb-4 text-lg">Rechercher un chantier (optionnel)</h3>
+                    <ChantierSearch 
+                      onSelect={handleChantierSelect}
+                      entityId={entity.id}
+                      agencyId={agency?.id}
+                    />
+                    <p className="text-xs text-slate-500 mt-2">
+                      Sélectionnez un chantier existant pour remplir automatiquement les informations, ou saisissez-les manuellement ci-dessous.
+                    </p>
+                  </div>
+
                   <div className="grid md:grid-cols-2 gap-6">
                     <div className="space-y-2">
                       <Label htmlFor="clientName">Nom du client/site *</Label>
