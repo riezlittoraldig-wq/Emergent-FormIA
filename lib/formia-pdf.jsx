@@ -389,6 +389,3 @@ export function MaintenancePDFDocument({ formData, entity }) {
     </Document>
   )
 }
->
-  )
-}
