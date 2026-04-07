@@ -5,13 +5,16 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { PhotoUpload } from './PhotoUpload'
 import { TransformatorSection } from './TransformatorSection'
 import { CelluleProtectionSection } from './CelluleProtectionSection'
+import { DisjoncteurGeneralSection } from './DisjoncteurGeneralSection'
+import { TableauControlesSection } from './TableauControlesSection'
+import { ObservationsSignaturesSection } from './ObservationsSignaturesSection'
 import { PDFPreview } from './PDFPreview'
 import { supabase } from '@/lib/formia-supabase'
+import { TABLEAUX_CONTROLES } from '@/lib/formia-config'
 import { Save, FileDown, Eye, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -21,7 +24,6 @@ export function MaintenanceHTBTForm({ entity, documentType, onBack }) {
   const [showPreview, setShowPreview] = useState(false)
   
   const [formData, setFormData] = useState({
-    // Informations générales
     documentNumber: `${Date.now()}`,
     clientName: '',
     numeroAffaire: '',
@@ -33,11 +35,7 @@ export function MaintenanceHTBTForm({ entity, documentType, onBack }) {
     address: '',
     postalCode: '',
     city: '',
-    
-    // Photos avant intervention
     photosAvant: [],
-    
-    // Transformateur
     transformateur: {
       marque: '',
       puissance: '',
@@ -46,11 +44,34 @@ export function MaintenanceHTBTForm({ entity, documentType, onBack }) {
       reference: '',
       photo: null
     },
-    
-    // Cellules protection (array)
     cellulesProtection: [
       { marque: '', type: '', reference: '', designation: '', observations: '', photo: null }
-    ]
+    ],
+    disjoncteurGeneral: {
+      marque: '',
+      type: '',
+      numeroSerie: '',
+      norme: '',
+      familleDeclencheur: '',
+      typeDeclencheur: '',
+      pouvoirCoupure: '',
+      in: '',
+      nombrePoles: '',
+      paramProtection: '',
+      divers: '',
+      photo: null
+    },
+    controlesAccessoires: TABLEAUX_CONTROLES.accessoiresSecurite.controles.map(() => ({ vu: false, observations: '' })),
+    controlesDisjoncteurBT: TABLEAUX_CONTROLES.disjoncteurBT.controles.map(() => ({ vu: false, observations: '' })),
+    controlesCellulesHTA: TABLEAUX_CONTROLES.cellulesHTA.controles.map(() => ({ vu: false, observations: '' })),
+    controlesTransformateur: TABLEAUX_CONTROLES.transformateur.controles.map(() => ({ vu: false, observations: '' })),
+    controlesLocalPoste: TABLEAUX_CONTROLES.localPoste.controles.map(() => ({ vu: false, observations: '' })),
+    photosApres: [],
+    observationsSignatures: {
+      observations: '',
+      signatureIntervenant: '',
+      signatureClient: ''
+    }
   })
 
   const updateFormData = (field, value) => {
@@ -118,11 +139,21 @@ export function MaintenanceHTBTForm({ entity, documentType, onBack }) {
     return formData.clientName && formData.numeroAffaire && formData.intervenant
   }
 
+  const tabs = [
+    { id: 'general', label: 'Général' },
+    { id: 'photos-avant', label: 'Photos avant' },
+    { id: 'transformateur', label: 'Transformateur' },
+    { id: 'cellules', label: 'Cellules HT' },
+    { id: 'disjoncteur', label: 'Disjoncteur BT' },
+    { id: 'controles', label: 'Contrôles' },
+    { id: 'photos-apres', label: 'Photos après' },
+    { id: 'observations', label: 'Observations' }
+  ]
+
   return (
     <div className="space-y-6">
       {!showPreview ? (
         <>
-          {/* Actions */}
           <Card className="shadow-lg border-0">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
@@ -148,16 +179,14 @@ export function MaintenanceHTBTForm({ entity, documentType, onBack }) {
             </CardContent>
           </Card>
 
-          {/* Tabs */}
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-4 mb-6">
-              <TabsTrigger value="general">Informations générales</TabsTrigger>
-              <TabsTrigger value="photos">Photos avant</TabsTrigger>
-              <TabsTrigger value="transformateur">Transformateur</TabsTrigger>
-              <TabsTrigger value="cellules">Cellules protection</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-4 lg:grid-cols-8 mb-6">
+              {tabs.map(tab => (
+                <TabsTrigger key={tab.id} value={tab.id}>{tab.label}</TabsTrigger>
+              ))}
             </TabsList>
 
-            {/* Informations générales */}
+            {/* Onglet 1: Informations générales */}
             <TabsContent value="general">
               <Card className="shadow-lg border-0">
                 <CardHeader>
@@ -277,14 +306,14 @@ export function MaintenanceHTBTForm({ entity, documentType, onBack }) {
                   </div>
 
                   <div className="flex justify-end pt-4">
-                    <Button onClick={() => setActiveTab('photos')}>Suivant: Photos avant</Button>
+                    <Button onClick={() => setActiveTab('photos-avant')}>Suivant: Photos avant</Button>
                   </div>
                 </CardContent>
               </Card>
             </TabsContent>
 
-            {/* Photos avant intervention */}
-            <TabsContent value="photos">
+            {/* Onglet 2: Photos avant */}
+            <TabsContent value="photos-avant">
               <Card className="shadow-lg border-0">
                 <CardHeader>
                   <CardTitle>Photos avant intervention</CardTitle>
@@ -304,7 +333,7 @@ export function MaintenanceHTBTForm({ entity, documentType, onBack }) {
               </Card>
             </TabsContent>
 
-            {/* Transformateur */}
+            {/* Onglet 3: Transformateur */}
             <TabsContent value="transformateur">
               <Card className="shadow-lg border-0">
                 <CardHeader>
@@ -317,18 +346,18 @@ export function MaintenanceHTBTForm({ entity, documentType, onBack }) {
                     onChange={(data) => updateFormData('transformateur', data)}
                   />
                   <div className="flex justify-between pt-6">
-                    <Button variant="outline" onClick={() => setActiveTab('photos')}>Précédent</Button>
-                    <Button onClick={() => setActiveTab('cellules')}>Suivant: Cellules protection</Button>
+                    <Button variant="outline" onClick={() => setActiveTab('photos-avant')}>Précédent</Button>
+                    <Button onClick={() => setActiveTab('cellules')}>Suivant: Cellules HT</Button>
                   </div>
                 </CardContent>
               </Card>
             </TabsContent>
 
-            {/* Cellules protection */}
+            {/* Onglet 4: Cellules protection */}
             <TabsContent value="cellules">
               <Card className="shadow-lg border-0">
                 <CardHeader>
-                  <CardTitle>Cellules de protection</CardTitle>
+                  <CardTitle>Cellules de protection HT</CardTitle>
                   <CardDescription>Ajoutez les cellules de protection inspectées</CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -340,17 +369,112 @@ export function MaintenanceHTBTForm({ entity, documentType, onBack }) {
                   />
                   <div className="flex justify-between pt-6">
                     <Button variant="outline" onClick={() => setActiveTab('transformateur')}>Précédent</Button>
-                    <Button 
-                      onClick={handleGeneratePDF}
-                      disabled={!canGeneratePDF()}
-                      className="bg-red-600 hover:bg-red-700"
-                    >
-                      <Eye className="w-4 h-4 mr-2" />
-                      Prévisualiser le PDF
-                    </Button>
+                    <Button onClick={() => setActiveTab('disjoncteur')}>Suivant: Disjoncteur BT</Button>
                   </div>
                 </CardContent>
               </Card>
+            </TabsContent>
+
+            {/* Onglet 5: Disjoncteur général BT */}
+            <TabsContent value="disjoncteur">
+              <Card className="shadow-lg border-0">
+                <CardHeader>
+                  <CardTitle>Disjoncteur général basse tension</CardTitle>
+                  <CardDescription>Caractéristiques du disjoncteur général</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <DisjoncteurGeneralSection 
+                    data={formData.disjoncteurGeneral}
+                    onChange={(data) => updateFormData('disjoncteurGeneral', data)}
+                  />
+                  <div className="flex justify-between pt-6">
+                    <Button variant="outline" onClick={() => setActiveTab('cellules')}>Précédent</Button>
+                    <Button onClick={() => setActiveTab('controles')}>Suivant: Contrôles</Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* Onglet 6: Tableaux de contrôles */}
+            <TabsContent value="controles">
+              <div className="space-y-6">
+                <TableauControlesSection 
+                  titre={TABLEAUX_CONTROLES.accessoiresSecurite.titre}
+                  controles={TABLEAUX_CONTROLES.accessoiresSecurite.controles}
+                  data={formData.controlesAccessoires}
+                  onChange={(data) => updateFormData('controlesAccessoires', data)}
+                />
+                <TableauControlesSection 
+                  titre={TABLEAUX_CONTROLES.disjoncteurBT.titre}
+                  controles={TABLEAUX_CONTROLES.disjoncteurBT.controles}
+                  data={formData.controlesDisjoncteurBT}
+                  onChange={(data) => updateFormData('controlesDisjoncteurBT', data)}
+                />
+                <TableauControlesSection 
+                  titre={TABLEAUX_CONTROLES.cellulesHTA.titre}
+                  controles={TABLEAUX_CONTROLES.cellulesHTA.controles}
+                  data={formData.controlesCellulesHTA}
+                  onChange={(data) => updateFormData('controlesCellulesHTA', data)}
+                />
+                <TableauControlesSection 
+                  titre={TABLEAUX_CONTROLES.transformateur.titre}
+                  controles={TABLEAUX_CONTROLES.transformateur.controles}
+                  data={formData.controlesTransformateur}
+                  onChange={(data) => updateFormData('controlesTransformateur', data)}
+                />
+                <TableauControlesSection 
+                  titre={TABLEAUX_CONTROLES.localPoste.titre}
+                  controles={TABLEAUX_CONTROLES.localPoste.controles}
+                  data={formData.controlesLocalPoste}
+                  onChange={(data) => updateFormData('controlesLocalPoste', data)}
+                />
+                <div className="flex justify-between pt-6">
+                  <Button variant="outline" onClick={() => setActiveTab('disjoncteur')}>Précédent</Button>
+                  <Button onClick={() => setActiveTab('photos-apres')}>Suivant: Photos après</Button>
+                </div>
+              </div>
+            </TabsContent>
+
+            {/* Onglet 7: Photos après */}
+            <TabsContent value="photos-apres">
+              <Card className="shadow-lg border-0">
+                <CardHeader>
+                  <CardTitle>Photos après intervention</CardTitle>
+                  <CardDescription>Ajoutez jusqu'à 4 photos de l'état après intervention</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <PhotoUpload 
+                    photos={formData.photosApres}
+                    onChange={(photos) => updateFormData('photosApres', photos)}
+                    maxPhotos={4}
+                  />
+                  <div className="flex justify-between pt-6">
+                    <Button variant="outline" onClick={() => setActiveTab('controles')}>Précédent</Button>
+                    <Button onClick={() => setActiveTab('observations')}>Suivant: Observations</Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* Onglet 8: Observations et signatures */}
+            <TabsContent value="observations">
+              <div className="space-y-6">
+                <ObservationsSignaturesSection 
+                  data={formData.observationsSignatures}
+                  onChange={(data) => updateFormData('observationsSignatures', data)}
+                />
+                <div className="flex justify-between pt-6">
+                  <Button variant="outline" onClick={() => setActiveTab('photos-apres')}>Précédent</Button>
+                  <Button 
+                    onClick={handleGeneratePDF}
+                    disabled={!canGeneratePDF()}
+                    className="bg-red-600 hover:bg-red-700"
+                  >
+                    <Eye className="w-4 h-4 mr-2" />
+                    Prévisualiser le PDF
+                  </Button>
+                </div>
+              </div>
             </TabsContent>
           </Tabs>
         </>

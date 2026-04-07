@@ -1,7 +1,6 @@
 import React from 'react'
-import { Document, Page, Text, View, StyleSheet, Image, Font } from '@react-pdf/renderer'
+import { Document, Page, Text, View, StyleSheet, Image } from '@react-pdf/renderer'
 
-// Styles pour le PDF
 const styles = StyleSheet.create({
   page: {
     padding: 30,
@@ -79,6 +78,15 @@ const styles = StyleSheet.create({
     marginBottom: 15,
     borderRadius: 5
   },
+  sectionTitlePage: {
+    backgroundColor: '#E63946',
+    color: '#ffffff',
+    padding: 30,
+    fontSize: 24,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginTop: 200
+  },
   photosGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -134,6 +142,56 @@ const styles = StyleSheet.create({
     flex: 1,
     color: '#333'
   },
+  tableRow: {
+    flexDirection: 'row',
+    borderBottom: '1px solid #ccc',
+    padding: 8,
+    minHeight: 30
+  },
+  tableHeader: {
+    backgroundColor: '#f0f0f0',
+    fontWeight: 'bold',
+    borderBottom: '2px solid #E63946'
+  },
+  tableColCheck: {
+    width: '10%',
+    textAlign: 'center'
+  },
+  tableColLabel: {
+    width: '50%'
+  },
+  tableColObs: {
+    width: '40%'
+  },
+  checkmark: {
+    color: '#E63946',
+    fontSize: 12,
+    fontWeight: 'bold'
+  },
+  observationsBox: {
+    border: '1px solid #E63946',
+    padding: 15,
+    borderRadius: 5,
+    marginBottom: 20,
+    minHeight: 100
+  },
+  signaturesBox: {
+    flexDirection: 'row',
+    marginTop: 30,
+    gap: 20
+  },
+  signatureSection: {
+    flex: 1,
+    border: '1px solid #E63946',
+    padding: 15,
+    borderRadius: 5,
+    minHeight: 80
+  },
+  signatureLabel: {
+    fontWeight: 'bold',
+    color: '#E63946',
+    marginBottom: 10
+  },
   footer: {
     position: 'absolute',
     bottom: 30,
@@ -161,11 +219,21 @@ export function MaintenancePDFDocument({ formData, entity }) {
     return date.toLocaleDateString('fr-FR')
   }
 
+  const Footer = () => (
+    <View style={styles.footer} fixed>
+      <Text>
+        {entity.contact_info?.agency} - {entity.contact_info?.address} {entity.contact_info?.postal_code} {entity.contact_info?.city}
+      </Text>
+      <Text>
+        Tél : {entity.contact_info?.phone} | Mail : {entity.contact_info?.email}
+      </Text>
+    </View>
+  )
+
   return (
     <Document>
       {/* Page 1: Informations générales */}
       <Page size="A4" style={styles.page}>
-        {/* Header */}
         <View style={styles.header}>
           {entity.logo_url && (
             <Image src={entity.logo_url} style={styles.logo} />
@@ -188,16 +256,13 @@ export function MaintenancePDFDocument({ formData, entity }) {
           )}
         </View>
 
-        {/* Title */}
         <View style={styles.titleSection}>
           <Text style={styles.titleText}>RAPPORT DE MAINTENANCE HT/BT</Text>
           <Text style={styles.documentNumber}>N°{formData.documentNumber}</Text>
         </View>
 
-        {/* Client Name */}
         <Text style={styles.clientName}>{formData.clientName}</Text>
 
-        {/* Info Box */}
         <View style={styles.infoBox}>
           <View style={styles.infoRow}>
             <Text style={styles.infoLabel}>N° d'affaire :</Text>
@@ -249,15 +314,7 @@ export function MaintenancePDFDocument({ formData, entity }) {
           )}
         </View>
 
-        {/* Footer */}
-        <View style={styles.footer}>
-          <Text>
-            {entity.contact_info?.agency} - {entity.contact_info?.address} {entity.contact_info?.postal_code} {entity.contact_info?.city}
-          </Text>
-          <Text>
-            Tél : {entity.contact_info?.phone} | Mail : {entity.contact_info?.email}
-          </Text>
-        </View>
+        <Footer />
         <Text style={styles.pageNumber} render={({ pageNumber }) => `${pageNumber}`} fixed />
       </Page>
 
@@ -272,11 +329,7 @@ export function MaintenancePDFDocument({ formData, entity }) {
               </View>
             ))}
           </View>
-          <View style={styles.footer}>
-            <Text>
-              {entity.contact_info?.agency} - {entity.contact_info?.address} {entity.contact_info?.postal_code} {entity.contact_info?.city}
-            </Text>
-          </View>
+          <Footer />
           <Text style={styles.pageNumber} render={({ pageNumber }) => `${pageNumber}`} fixed />
         </Page>
       )}
@@ -325,16 +378,12 @@ export function MaintenancePDFDocument({ formData, entity }) {
               />
             </View>
           )}
-          <View style={styles.footer}>
-            <Text>
-              {entity.contact_info?.agency} - {entity.contact_info?.address} {entity.contact_info?.postal_code} {entity.contact_info?.city}
-            </Text>
-          </View>
+          <Footer />
           <Text style={styles.pageNumber} render={({ pageNumber }) => `${pageNumber}`} fixed />
         </Page>
       )}
 
-      {/* Page 4+: Cellules protection */}
+      {/* Page 4: Cellules Protection HT */}
       {formData.cellulesProtection && formData.cellulesProtection.filter(c => c.marque || c.type).length > 0 && (
         <Page size="A4" style={styles.page}>
           <Text style={styles.sectionTitle}>CELLULE PROTECTION HT</Text>
@@ -371,21 +420,199 @@ export function MaintenancePDFDocument({ formData, entity }) {
               {cellule.photo && (
                 <View style={{ marginTop: 10 }}>
                   <Image 
-                    src={cellule.photo.preview || cellule.photo.url} 
+                    src={cellule.photo.base64 || cellule.photo.preview || cellule.photo.url} 
                     style={{ width: 150, height: 120, objectFit: 'contain' }}
                   />
                 </View>
               )}
             </View>
           ))}
-          <View style={styles.footer}>
-            <Text>
-              {entity.contact_info?.agency} - {entity.contact_info?.address} {entity.contact_info?.postal_code} {entity.contact_info?.city}
-            </Text>
-          </View>
+          <Footer />
           <Text style={styles.pageNumber} render={({ pageNumber }) => `${pageNumber}`} fixed />
         </Page>
       )}
+
+      {/* Page 5: Disjoncteur général basse tension */}
+      {formData.disjoncteurGeneral && (formData.disjoncteurGeneral.marque || formData.disjoncteurGeneral.type) && (
+        <Page size="A4" style={styles.page}>
+          <Text style={styles.sectionTitle}>DISJONCTEUR GENERAL BASSE TENSION</Text>
+          <View style={styles.transformateurBox}>
+            {formData.disjoncteurGeneral.marque && (
+              <View style={styles.transformateurRow}>
+                <Text style={styles.transformateurLabel}>Marque :</Text>
+                <Text style={styles.transformateurValue}>{formData.disjoncteurGeneral.marque}</Text>
+              </View>
+            )}
+            {formData.disjoncteurGeneral.type && (
+              <View style={styles.transformateurRow}>
+                <Text style={styles.transformateurLabel}>Type :</Text>
+                <Text style={styles.transformateurValue}>{formData.disjoncteurGeneral.type}</Text>
+              </View>
+            )}
+            {formData.disjoncteurGeneral.numeroSerie && (
+              <View style={styles.transformateurRow}>
+                <Text style={styles.transformateurLabel}>N° série :</Text>
+                <Text style={styles.transformateurValue}>{formData.disjoncteurGeneral.numeroSerie}</Text>
+              </View>
+            )}
+            {formData.disjoncteurGeneral.norme && (
+              <View style={styles.transformateurRow}>
+                <Text style={styles.transformateurLabel}>Norme :</Text>
+                <Text style={styles.transformateurValue}>{formData.disjoncteurGeneral.norme}</Text>
+              </View>
+            )}
+            {formData.disjoncteurGeneral.familleDeclencheur && (
+              <View style={styles.transformateurRow}>
+                <Text style={styles.transformateurLabel}>Famille décl. :</Text>
+                <Text style={styles.transformateurValue}>{formData.disjoncteurGeneral.familleDeclencheur}</Text>
+              </View>
+            )}
+            {formData.disjoncteurGeneral.typeDeclencheur && (
+              <View style={styles.transformateurRow}>
+                <Text style={styles.transformateurLabel}>Type décl. :</Text>
+                <Text style={styles.transformateurValue}>{formData.disjoncteurGeneral.typeDeclencheur}</Text>
+              </View>
+            )}
+            {formData.disjoncteurGeneral.pouvoirCoupure && (
+              <View style={styles.transformateurRow}>
+                <Text style={styles.transformateurLabel}>Pouvoir coupure :</Text>
+                <Text style={styles.transformateurValue}>{formData.disjoncteurGeneral.pouvoirCoupure}</Text>
+              </View>
+            )}
+            {formData.disjoncteurGeneral.in && (
+              <View style={styles.transformateurRow}>
+                <Text style={styles.transformateurLabel}>In :</Text>
+                <Text style={styles.transformateurValue}>{formData.disjoncteurGeneral.in}</Text>
+              </View>
+            )}
+            {formData.disjoncteurGeneral.nombrePoles && (
+              <View style={styles.transformateurRow}>
+                <Text style={styles.transformateurLabel}>Nb pôles :</Text>
+                <Text style={styles.transformateurValue}>{formData.disjoncteurGeneral.nombrePoles}</Text>
+              </View>
+            )}
+            {formData.disjoncteurGeneral.paramProtection && (
+              <View style={styles.transformateurRow}>
+                <Text style={styles.transformateurLabel}>Param. prot. :</Text>
+                <Text style={styles.transformateurValue}>{formData.disjoncteurGeneral.paramProtection}</Text>
+              </View>
+            )}
+            {formData.disjoncteurGeneral.divers && (
+              <View style={styles.transformateurRow}>
+                <Text style={styles.transformateurLabel}>Divers :</Text>
+                <Text style={styles.transformateurValue}>{formData.disjoncteurGeneral.divers}</Text>
+              </View>
+            )}
+          </View>
+          {formData.disjoncteurGeneral.photo && (
+            <View style={{ marginTop: 20 }}>
+              <Image 
+                src={formData.disjoncteurGeneral.photo.base64 || formData.disjoncteurGeneral.photo.preview || formData.disjoncteurGeneral.photo.url} 
+                style={{ width: 250, height: 200, objectFit: 'contain' }}
+              />
+            </View>
+          )}
+          <Footer />
+          <Text style={styles.pageNumber} render={({ pageNumber }) => `${pageNumber}`} fixed />
+        </Page>
+      )}
+
+      {/* Page 6: Page de séparation CONTRÔLES */}
+      <Page size="A4" style={styles.page}>
+        <Text style={styles.sectionTitlePage}>CONTRÔLES</Text>
+        <Footer />
+        <Text style={styles.pageNumber} render={({ pageNumber }) => `${pageNumber}`} fixed />
+      </Page>
+
+      {/* Pages 7-9: Tableaux de contrôles */}
+      <Page size="A4" style={styles.page}>
+        <Text style={styles.sectionTitle}>ACCESSOIRES DE SÉCURITÉ</Text>
+        <ControleTable data={formData.controlesAccessoires} />
+        
+        <Text style={[styles.sectionTitle, { marginTop: 30 }]}>DISJONCTEUR BASSE TENSION</Text>
+        <ControleTable data={formData.controlesDisjoncteurBT} />
+        
+        <Footer />
+        <Text style={styles.pageNumber} render={({ pageNumber }) => `${pageNumber}`} fixed />
+      </Page>
+
+      <Page size="A4" style={styles.page}>
+        <Text style={styles.sectionTitle}>CELLULES HTA</Text>
+        <ControleTable data={formData.controlesCellulesHTA} />
+        
+        <Text style={[styles.sectionTitle, { marginTop: 30 }]}>TRANSFORMATEUR</Text>
+        <ControleTable data={formData.controlesTransformateur} />
+        
+        <Footer />
+        <Text style={styles.pageNumber} render={({ pageNumber }) => `${pageNumber}`} fixed />
+      </Page>
+
+      <Page size="A4" style={styles.page}>
+        <Text style={styles.sectionTitle}>LOCAL POSTE DE TRANSFORMATION</Text>
+        <ControleTable data={formData.controlesLocalPoste} />
+        
+        <Footer />
+        <Text style={styles.pageNumber} render={({ pageNumber }) => `${pageNumber}`} fixed />
+      </Page>
+
+      {/* Page 10: Photos après intervention */}
+      {formData.photosApres && formData.photosApres.length > 0 && (
+        <Page size="A4" style={styles.page}>
+          <Text style={styles.sectionTitle}>PHOTOS APRÈS INTERVENTION</Text>
+          <View style={styles.photosGrid}>
+            {formData.photosApres.slice(0, 4).map((photo, index) => (
+              <View key={index} style={styles.photoContainer}>
+                <Image src={photo.base64 || photo.preview || photo.url} style={styles.photo} />
+              </View>
+            ))}
+          </View>
+          <Footer />
+          <Text style={styles.pageNumber} render={({ pageNumber }) => `${pageNumber}`} fixed />
+        </Page>
+      )}
+
+      {/* Page 11: Observations et Signatures */}
+      <Page size="A4" style={styles.page}>
+        <Text style={styles.sectionTitle}>OBSERVATIONS PARTICULIÈRES</Text>
+        <View style={styles.observationsBox}>
+          <Text>{formData.observationsSignatures?.observations || ''}</Text>
+        </View>
+
+        <Text style={styles.sectionTitle}>SIGNATURES</Text>
+        <View style={styles.signaturesBox}>
+          <View style={styles.signatureSection}>
+            <Text style={styles.signatureLabel}>Intervenant</Text>
+            <Text style={{ marginTop: 40 }}>{formData.observationsSignatures?.signatureIntervenant || ''}</Text>
+          </View>
+          <View style={styles.signatureSection}>
+            <Text style={styles.signatureLabel}>Client</Text>
+            <Text style={{ marginTop: 40 }}>{formData.observationsSignatures?.signatureClient || ''}</Text>
+          </View>
+        </View>
+
+        <Footer />
+        <Text style={styles.pageNumber} render={({ pageNumber }) => `${pageNumber}`} fixed />
+      </Page>
     </Document>
+  )
+}
+
+// Composant pour les tableaux de contrôles
+function ControleTable({ data }) {
+  if (!data || data.length === 0) return null
+  
+  return (
+    <View style={{ marginBottom: 20 }}>
+      {data.map((item, index) => (
+        <View key={index} style={styles.tableRow}>
+          <View style={styles.tableColCheck}>
+            <Text style={styles.checkmark}>{item.vu ? '☑' : '☐'}</Text>
+          </View>
+          <View style={styles.tableColObs}>
+            <Text>{item.observations || '-'}</Text>
+          </View>
+        </View>
+      ))}
+    </View>
   )
 }
