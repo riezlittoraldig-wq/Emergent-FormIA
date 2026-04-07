@@ -95,29 +95,55 @@ export default function FormIAAdminPage() {
 
   const handleSaveChantier = async () => {
     try {
-      const emailsArray = typeof editingChantier.emails === 'string' 
-        ? editingChantier.emails.split(',').map(e => e.trim()).filter(Boolean)
-        : editingChantier.emails || []
+      // Convertir les emails en tableau PostgreSQL
+      let emailsArray = []
+      if (typeof editingChantier.emails === 'string') {
+        emailsArray = editingChantier.emails
+          .split(',')
+          .map(e => e.trim())
+          .filter(Boolean)
+      } else if (Array.isArray(editingChantier.emails)) {
+        emailsArray = editingChantier.emails.filter(Boolean)
+      }
 
-      const chantierData = { ...editingChantier, emails: emailsArray, entity_id: selectedEntity.id }
+      const chantierData = { 
+        code_chantier: editingChantier.code_chantier,
+        client_name: editingChantier.client_name,
+        address: editingChantier.address || null,
+        postal_code: editingChantier.postal_code || null,
+        city: editingChantier.city || null,
+        responsable_affaire: editingChantier.responsable_affaire || null,
+        emails: emailsArray.length > 0 ? emailsArray : null,
+        entity_id: selectedEntity.id,
+        agency_id: editingChantier.agency_id || null,
+        notes: editingChantier.notes || null
+      }
 
       if (editingChantier.id) {
         const { error } = await supabase
           .from('formia_chantiers')
           .update(chantierData)
           .eq('id', editingChantier.id)
-        if (error) throw error
+        if (error) {
+          console.error('Supabase error:', error)
+          throw error
+        }
         toast.success('Chantier mis à jour')
       } else {
-        const { error } = await supabase.from('formia_chantiers').insert(chantierData)
-        if (error) throw error
+        const { error } = await supabase
+          .from('formia_chantiers')
+          .insert(chantierData)
+        if (error) {
+          console.error('Supabase error:', error)
+          throw error
+        }
         toast.success('Chantier créé')
       }
       setEditingChantier(null)
       loadChantiers()
     } catch (error) {
       console.error('Error saving chantier:', error)
-      toast.error('Erreur lors de l\'enregistrement')
+      toast.error(`Erreur: ${error.message || 'Erreur lors de l\'enregistrement'}`)
     }
   }
 
