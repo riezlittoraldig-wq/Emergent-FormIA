@@ -136,9 +136,22 @@ function FormIAHeader() {
                         </button>
                       )}
 
+                      {(role === 'super_admin') && (
+                        <button
+                          onClick={() => {
+                            router.push('/formia/settings')
+                            setMenuOpen(false)
+                          }}
+                          className="w-full px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2"
+                        >
+                          <Settings className="w-4 h-4" />
+                          Paramètres
+                        </button>
+                      )}
+
                       <button
                         onClick={() => {
-                          alert('Page Paramètres à venir')
+                          alert('Page Mon profil à venir')
                           setMenuOpen(false)
                         }}
                         className="w-full px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2"
