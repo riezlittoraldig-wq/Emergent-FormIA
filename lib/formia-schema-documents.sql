@@ -152,6 +152,6 @@ LEFT JOIN formia_chantiers c ON d.chantier_id = c.id
 LEFT JOIN formia_user_profiles u ON d.created_by = u.user_id;
 
 -- Commentaires
-COMMENT ON TABLE formia_documents IS 'Documents/Rapports générés par l\'application';
+COMMENT ON TABLE formia_documents IS 'Documents/Rapports générés par l''application';
 COMMENT ON TABLE formia_document_technicians IS 'Liaison many-to-many entre documents et techniciens intervenants';
-COMMENT ON COLUMN formia_document_technicians.temps_intervention IS 'Temps d\'intervention en heures (ex: 2.5 = 2h30)';
+COMMENT ON COLUMN formia_document_technicians.temps_intervention IS 'Temps d''intervention en heures (ex: 2.5 = 2h30)';
