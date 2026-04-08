@@ -45,14 +45,14 @@ export async function POST(request) {
         } else {
           // Récupérer l'URL publique
           const { data: { publicUrl } } = supabase.storage
-          .from('formia-assets')
-          .getPublicUrl(`documents/${fileName}`)
-        
-        pdfUrl = publicUrl
-      }
+            .from('formia-assets')
+            .getPublicUrl(`documents/${fileName}`)
+          
+          pdfUrl = publicUrl
+        }
 
-      // 2. Sauvegarder le document dans formia_documents
-      const { data: docData, error: docError } = await supabase
+        // 2. Sauvegarder le document dans formia_documents
+        const { data: docData, error: docError } = await supabase
         .from('formia_documents')
         .insert({
           document_number: formData.documentNumber,
@@ -111,9 +111,9 @@ export async function POST(request) {
             console.error('Technicians save error:', techError)
           }
         }
+      }
       } catch (dbError) {
         console.error('Database operation error:', dbError)
-        // Continuer quand même, on retournera le PDF
       }
     }
 
