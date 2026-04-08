@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { supabase } from '@/lib/formia-supabase'
 import { ImportExcel } from '@/components/formia/ImportExcel'
 import { EntitiesTab } from '@/components/formia/EntitiesTab'
-import { Plus, Edit, Trash2, Save, X, Building2, Briefcase, Building, Upload } from 'lucide-react'
+import { Plus, Edit, Trash2, Save, X, Building2, Briefcase, Building, Upload, MapPin } from 'lucide-react'
 import { toast } from 'sonner'
 
 export default function FormIAAdminPage() {
@@ -18,9 +18,12 @@ export default function FormIAAdminPage() {
   const [selectedEntity, setSelectedEntity] = useState(null)
   const [agencies, setAgencies] = useState([])
   const [chantiers, setChantiers] = useState([])
+  const [centresTravaux, setCentresTravaux] = useState([])
+  const [selectedAgency, setSelectedAgency] = useState(null)
   const [editingEntity, setEditingEntity] = useState(null)
   const [editingAgency, setEditingAgency] = useState(null)
   const [editingChantier, setEditingChantier] = useState(null)
+  const [editingCentre, setEditingCentre] = useState(null)
   const [uploadingLogo, setUploadingLogo] = useState(false)
 
   useEffect(() => {
@@ -31,6 +34,7 @@ export default function FormIAAdminPage() {
     if (selectedEntity) {
       loadAgencies()
       loadChantiers()
+      loadCentresTravaux()
     }
   }, [selectedEntity])
 
@@ -58,6 +62,65 @@ export default function FormIAAdminPage() {
       .eq('entity_id', selectedEntity.id)
       .order('code_chantier')
     setChantiers(data || [])
+  }
+
+  const loadCentresTravaux = async () => {
+    if (!selectedEntity) return
+    // Charger tous les centres de travaux pour les agences de l'entité sélectionnée
+    // On doit d'abord charger les agences de l'entité
+    const { data: entityAgencies } = await supabase
+      .from('formia_agencies')
+      .select('id')
+      .eq('entity_id', selectedEntity.id)
+    
+    if (!entityAgencies || entityAgencies.length === 0) {
+      setCentresTravaux([])
+      return
+    }
+    
+    const { data } = await supabase
+      .from('formia_centres_travaux')
+      .select('*, formia_agencies(name)')
+      .in('agency_id', entityAgencies.map(a => a.id))
+      .order('name')
+    setCentresTravaux(data || [])
+  }
+
+  const handleSaveCentre = async () => {
+    try {
+      if (editingCentre.id) {
+        const { error } = await supabase
+          .from('formia_centres_travaux')
+          .update(editingCentre)
+          .eq('id', editingCentre.id)
+        if (error) throw error
+        toast.success('Centre de travaux mis à jour')
+      } else {
+        const { error } = await supabase
+          .from('formia_centres_travaux')
+          .insert(editingCentre)
+        if (error) throw error
+        toast.success('Centre de travaux créé')
+      }
+      setEditingCentre(null)
+      loadCentresTravaux()
+    } catch (error) {
+      console.error('Error saving centre:', error)
+      toast.error('Erreur lors de l\'enregistrement')
+    }
+  }
+
+  const handleDeleteCentre = async (id) => {
+    if (!confirm('Êtes-vous sûr de vouloir supprimer ce centre de travaux ?')) return
+    try {
+      const { error } = await supabase.from('formia_centres_travaux').delete().eq('id', id)
+      if (error) throw error
+      toast.success('Centre de travaux supprimé')
+      loadCentresTravaux()
+    } catch (error) {
+      console.error('Error deleting centre:', error)
+      toast.error('Erreur lors de la suppression')
+    }
   }
 
   const handleSaveAgency = async () => {
@@ -197,6 +260,10 @@ export default function FormIAAdminPage() {
               <Building2 className="w-4 h-4 mr-2" />
               Agences
             </TabsTrigger>
+            <TabsTrigger value="centres">
+              <MapPin className="w-4 h-4 mr-2" />
+              Centres de travaux
+            </TabsTrigger>
             <TabsTrigger value="chantiers">
               <Briefcase className="w-4 h-4 mr-2" />
               Chantiers
@@ -224,41 +291,83 @@ export default function FormIAAdminPage() {
                 {/* Section Import Excel */}
                 <div className="mb-8">
                   <ImportExcel
-                    title="Import Excel - Agences"
-                    templateName="template_agences"
+                    title="Import Excel - Agences (toutes entités)"
+                    templateName="template_agences_groupe"
                     templateColumns={[
-                      { key: 'name', label: 'Nom', required: true, example: 'Agence Saint-Gilles-Croix-de-Vie' },
+                      { key: 'entite', label: 'Entité/Filiale', required: true, example: 'ALLEZ ENERGIES' },
+                      { key: 'name', label: 'Nom agence', required: true, example: 'Agence Saint-Gilles-Croix-de-Vie' },
                       { key: 'code', label: 'Code', example: 'SGCV' },
                       { key: 'address', label: 'Adresse', example: '15 rue des Couvreurs' },
                       { key: 'postal_code', label: 'Code postal', example: '85800' },
                       { key: 'city', label: 'Ville', example: 'SAINT GILLES CROIX DE VIE' },
                       { key: 'phone', label: 'Téléphone', example: '02.51.60.00.00' },
-                      { key: 'email', label: 'Email', example: 'contact@allez.fr' }
+                      { key: 'email', label: 'Email', example: 'contact@allez.fr' },
+                      { key: 'centres_travaux', label: 'Centres de travaux (séparés par virgule)', example: 'Centre Olonne, Centre Challans' }
                     ]}
                     exampleData={[
-                      { name: 'Agence Saint-Gilles', code: 'SGCV', address: '15 rue des Couvreurs', postal_code: '85800', city: 'SAINT GILLES CROIX DE VIE', phone: '02.51.60.00.00', email: 'stgilles@allez.fr' },
-                      { name: 'Agence Nantes', code: 'NAN', address: '10 rue de la Loire', postal_code: '44000', city: 'NANTES', phone: '02.40.00.00.00', email: 'nantes@allez.fr' }
+                      { entite: 'ALLEZ ENERGIES', name: 'Agence Saint-Gilles', code: 'SGCV', address: '15 rue des Couvreurs', postal_code: '85800', city: 'SAINT GILLES CROIX DE VIE', phone: '02.51.60.00.00', email: 'stgilles@allez.fr', centres_travaux: 'Centre Olonne, Centre Challans' },
+                      { entite: 'AEB', name: 'Agence Unique AEB', code: 'AEB01', address: '5 avenue du Commerce', postal_code: '44100', city: 'NANTES', phone: '02.51.00.00.00', email: 'contact@aeb.fr', centres_travaux: '' },
+                      { entite: 'LEMAIRE', name: 'Agence Unique LEMAIRE', code: 'LEM01', address: '8 rue Victor Hugo', postal_code: '85000', city: 'LA ROCHE SUR YON', phone: '02.51.00.00.00', email: 'contact@lemaire.fr', centres_travaux: '' }
                     ]}
                     onImport={async (data) => {
+                      // Charger toutes les entités
+                      const { data: allEntities } = await supabase.from('formia_entities').select('id, name')
+                      
                       const results = await Promise.allSettled(
-                        data.map(row => 
-                          supabase.from('formia_agencies').insert({
-                            entity_id: selectedEntity.id,
-                            name: row.name,
-                            code: row.code || null,
-                            address: row.address || null,
-                            postal_code: row.postal_code || null,
-                            city: row.city || null,
-                            phone: row.phone || null,
-                            email: row.email || null
-                          })
-                        )
+                        data.map(async row => {
+                          // Trouver l'entité par nom
+                          const entity = allEntities.find(e => e.name.toLowerCase() === row.entite?.toLowerCase())
+                          if (!entity) {
+                            throw new Error(`Entité "${row.entite}" non trouvée`)
+                          }
+                          
+                          // Créer l'agence
+                          const { data: newAgency, error: agencyError } = await supabase
+                            .from('formia_agencies')
+                            .insert({
+                              entity_id: entity.id,
+                              name: row.name,
+                              code: row.code || null,
+                              address: row.address || null,
+                              postal_code: row.postal_code || null,
+                              city: row.city || null,
+                              phone: row.phone || null,
+                              email: row.email || null
+                            })
+                            .select()
+                            .single()
+                          
+                          if (agencyError) throw agencyError
+                          
+                          // Créer les centres de travaux si présents
+                          if (row.centres_travaux && newAgency) {
+                            const centres = row.centres_travaux
+                              .split(',')
+                              .map(c => c.trim())
+                              .filter(Boolean)
+                            
+                            if (centres.length > 0) {
+                              await Promise.all(
+                                centres.map(centreName =>
+                                  supabase.from('formia_centres_travaux').insert({
+                                    agency_id: newAgency.id,
+                                    name: centreName
+                                  })
+                                )
+                              )
+                            }
+                          }
+                          
+                          return newAgency
+                        })
                       )
+                      
                       const errors = results.filter(r => r.status === 'rejected')
                       if (errors.length > 0) {
                         console.error('Import errors:', errors)
                         throw new Error(`${errors.length} ligne(s) en erreur`)
                       }
+                      
                       loadAgencies()
                     }}
                   />
@@ -324,6 +433,131 @@ export default function FormIAAdminPage() {
                             <Edit className="w-4 h-4" />
                           </Button>
                           <Button variant="ghost" size="sm" onClick={() => handleDeleteAgency(agency.id)}>
+                            <Trash2 className="w-4 h-4 text-red-600" />
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Tab Centres de travaux */}
+          <TabsContent value="centres">
+            <Card>
+              <CardHeader>
+                <div className="flex justify-between items-center">
+                  <CardTitle>Centres de travaux de {selectedEntity?.name}</CardTitle>
+                  <Button onClick={() => setEditingCentre({ name: '', code: '', address: '', postal_code: '', city: '', phone: '', email: '', responsable: '', agency_id: agencies[0]?.id || null })}>
+                    <Plus className="w-4 h-4 mr-2" />
+                    Nouveau centre
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {editingCentre && (
+                  <Card className="mb-6 border-blue-600">
+                    <CardContent className="p-4 space-y-4">
+                      <div className="grid md:grid-cols-2 gap-4">
+                        <div>
+                          <Label>Agence *</Label>
+                          <select 
+                            className="w-full p-2 border rounded"
+                            value={editingCentre.agency_id}
+                            onChange={(e) => setEditingCentre({...editingCentre, agency_id: e.target.value})}
+                          >
+                            {agencies.map(agency => (
+                              <option key={agency.id} value={agency.id}>{agency.name}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div>
+                          <Label>Code ERP *</Label>
+                          <Input 
+                            value={editingCentre.code || ''} 
+                            onChange={(e) => setEditingCentre({...editingCentre, code: e.target.value})}
+                            placeholder="SGIX, SAR, etc."
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <Label>Nom du centre *</Label>
+                        <Input 
+                          value={editingCentre.name || ''} 
+                          onChange={(e) => setEditingCentre({...editingCentre, name: e.target.value})} 
+                          placeholder="St Gilles Indus, Sarlat, etc."
+                        />
+                      </div>
+                      <div>
+                        <Label>Adresse</Label>
+                        <Input value={editingCentre.address || ''} onChange={(e) => setEditingCentre({...editingCentre, address: e.target.value})} />
+                      </div>
+                      <div className="grid md:grid-cols-2 gap-4">
+                        <div>
+                          <Label>Code postal</Label>
+                          <Input value={editingCentre.postal_code || ''} onChange={(e) => setEditingCentre({...editingCentre, postal_code: e.target.value})} />
+                        </div>
+                        <div>
+                          <Label>Ville</Label>
+                          <Input value={editingCentre.city || ''} onChange={(e) => setEditingCentre({...editingCentre, city: e.target.value})} />
+                        </div>
+                      </div>
+                      <div className="grid md:grid-cols-2 gap-4">
+                        <div>
+                          <Label>Téléphone</Label>
+                          <Input value={editingCentre.phone || ''} onChange={(e) => setEditingCentre({...editingCentre, phone: e.target.value})} />
+                        </div>
+                        <div>
+                          <Label>Email</Label>
+                          <Input value={editingCentre.email || ''} onChange={(e) => setEditingCentre({...editingCentre, email: e.target.value})} />
+                        </div>
+                      </div>
+                      <div>
+                        <Label>Responsable</Label>
+                        <Input value={editingCentre.responsable || ''} onChange={(e) => setEditingCentre({...editingCentre, responsable: e.target.value})} />
+                      </div>
+                      <div className="flex gap-2">
+                        <Button onClick={handleSaveCentre}><Save className="w-4 h-4 mr-2" />Enregistrer</Button>
+                        <Button variant="outline" onClick={() => setEditingCentre(null)}><X className="w-4 h-4 mr-2" />Annuler</Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                <div className="space-y-2">
+                  {centresTravaux.length === 0 && (
+                    <div className="text-center py-8 text-slate-500">
+                      <MapPin className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                      <p>Aucun centre de travaux pour le moment</p>
+                      <p className="text-sm mt-1">Utilisez l'import Excel dans l'onglet Agences ou créez-en un manuellement</p>
+                    </div>
+                  )}
+                  {centresTravaux.map(centre => (
+                    <Card key={centre.id}>
+                      <CardContent className="p-4 flex justify-between items-start">
+                        <div>
+                          <div className="flex items-center gap-2 mb-1">
+                            <h3 className="font-semibold">{centre.name}</h3>
+                            {centre.code && <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs font-medium rounded">{centre.code}</span>}
+                          </div>
+                          {centre.formia_agencies && (
+                            <p className="text-sm text-slate-500 mb-1">Agence: {centre.formia_agencies.name}</p>
+                          )}
+                          {centre.address && <p className="text-sm text-slate-600">{centre.address}, {centre.postal_code} {centre.city}</p>}
+                          {(centre.phone || centre.email) && (
+                            <p className="text-sm text-slate-600">{centre.phone} {centre.phone && centre.email && '|'} {centre.email}</p>
+                          )}
+                          {centre.responsable && (
+                            <p className="text-sm text-slate-600">Responsable: {centre.responsable}</p>
+                          )}
+                        </div>
+                        <div className="flex gap-2">
+                          <Button variant="ghost" size="sm" onClick={() => setEditingCentre(centre)}>
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                          <Button variant="ghost" size="sm" onClick={() => handleDeleteCentre(centre.id)}>
                             <Trash2 className="w-4 h-4 text-red-600" />
                           </Button>
                         </div>
