@@ -111,6 +111,9 @@ export async function POST(request) {
             console.error('Technicians save error:', techError)
           }
         }
+      } catch (dbError) {
+        console.error('Database operation error:', dbError)
+        // Continuer quand même, on retournera le PDF
       }
     }
 
