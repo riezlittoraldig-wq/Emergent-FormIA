@@ -566,6 +566,7 @@ export function MaintenanceHTBTForm({ entity, agency, documentType, onBack }) {
         <PDFPreview 
           formData={formData}
           entity={entity}
+          agency={agency}
           documentType={documentType}
           onBack={() => setShowPreview(false)}
         />

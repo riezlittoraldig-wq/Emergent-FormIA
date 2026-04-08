@@ -6,10 +6,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Download, ArrowLeft, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { convertFormPhotosToBase64 } from '@/lib/formia-utils'
+import { useAuth } from '@/lib/formia-auth-context'
 
-export function PDFPreview({ formData, entity, documentType, onBack }) {
+export function PDFPreview({ formData, entity, agency, documentType, onBack }) {
   const [generating, setGenerating] = useState(false)
   const [pdfUrl, setPdfUrl] = useState(null)
+  const { user } = useAuth()
 
   const handleGeneratePDF = async () => {
     setGenerating(true)
@@ -20,16 +22,31 @@ export function PDFPreview({ formData, entity, documentType, onBack }) {
       const response = await fetch('/api/formia/generate-pdf', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ formData: formDataWithBase64, entity, documentType })
+        body: JSON.stringify({ 
+          formData: formDataWithBase64, 
+          entity, 
+          agency,
+          documentType,
+          saveToDatabase: true,
+          userId: user?.id
+        })
       })
 
       if (!response.ok) throw new Error('PDF generation failed')
+
+      // Récupérer les métadonnées depuis les headers
+      const documentId = response.headers.get('X-Document-Id')
+      const savedPdfUrl = response.headers.get('X-PDF-Url')
 
       const blob = await response.blob()
       const url = URL.createObjectURL(blob)
       setPdfUrl(url)
       
-      toast.success('PDF généré avec succès')
+      if (documentId) {
+        toast.success('PDF généré et sauvegardé avec succès !')
+      } else {
+        toast.success('PDF généré avec succès')
+      }
     } catch (error) {
       console.error('Error generating PDF:', error)
       toast.error('Erreur lors de la génération du PDF')
