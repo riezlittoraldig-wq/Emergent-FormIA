@@ -8,9 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { supabase } from '@/lib/formia-supabase'
-import { ImportExcel } from '@/components/formia/ImportExcel'
-import { EntitiesTab } from '@/components/formia/EntitiesTab'
-import { Plus, Edit, Trash2, Save, X, Building2, Briefcase, Building, Upload } from 'lucide-react'
+import { Plus, Edit, Trash2, Save, X, Building2, Briefcase } from 'lucide-react'
 import { toast } from 'sonner'
 
 export default function FormIAAdminPage() {
@@ -18,10 +16,8 @@ export default function FormIAAdminPage() {
   const [selectedEntity, setSelectedEntity] = useState(null)
   const [agencies, setAgencies] = useState([])
   const [chantiers, setChantiers] = useState([])
-  const [editingEntity, setEditingEntity] = useState(null)
   const [editingAgency, setEditingAgency] = useState(null)
   const [editingChantier, setEditingChantier] = useState(null)
-  const [uploadingLogo, setUploadingLogo] = useState(false)
 
   useEffect(() => {
     loadEntities()
@@ -187,12 +183,8 @@ export default function FormIAAdminPage() {
           </div>
         )}
 
-        <Tabs defaultValue="entities">
+        <Tabs defaultValue="agencies">
           <TabsList className="mb-6">
-            <TabsTrigger value="entities">
-              <Building className="w-4 h-4 mr-2" />
-              Entités
-            </TabsTrigger>
             <TabsTrigger value="agencies">
               <Building2 className="w-4 h-4 mr-2" />
               Agences
@@ -202,11 +194,6 @@ export default function FormIAAdminPage() {
               Chantiers
             </TabsTrigger>
           </TabsList>
-
-          {/* Tab Entités */}
-          <TabsContent value="entities">
-            <EntitiesTab entities={entities} onReload={loadEntities} />
-          </TabsContent>
 
           {/* Tab Agences */}
           <TabsContent value="agencies">
