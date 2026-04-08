@@ -29,20 +29,22 @@ export async function POST(request) {
 
     // Sauvegarder en base de données si demandé
     if (saveToDatabase) {
-      // 1. Uploader le PDF sur Supabase Storage
-      const fileName = `${formData.documentNumber}_${Date.now()}.pdf`
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('formia-assets')
-        .upload(`documents/${fileName}`, pdfBuffer, {
-          contentType: 'application/pdf',
-          upsert: false
-        })
+      try {
+        // 1. Uploader le PDF sur Supabase Storage
+        const fileName = `${formData.documentNumber}_${Date.now()}.pdf`
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('formia-assets')
+          .upload(`documents/${fileName}`, pdfBuffer, {
+            contentType: 'application/pdf',
+            upsert: false
+          })
 
-      if (uploadError) {
-        console.error('Storage upload error:', uploadError)
-      } else {
-        // Récupérer l'URL publique
-        const { data: { publicUrl } } = supabase.storage
+        if (uploadError) {
+          console.error('Storage upload error:', uploadError)
+          // Continuer même si l'upload échoue
+        } else {
+          // Récupérer l'URL publique
+          const { data: { publicUrl } } = supabase.storage
           .from('formia-assets')
           .getPublicUrl(`documents/${fileName}`)
         
@@ -159,8 +161,9 @@ export async function POST(request) {
     })
   } catch (error) {
     console.error('PDF generation error:', error)
+    console.error('Error stack:', error.stack)
     return NextResponse.json(
-      { error: 'Failed to generate PDF', details: error.message },
+      { error: 'Failed to generate PDF', details: error.message, stack: error.stack },
       { status: 500 }
     )
   }
