@@ -2,11 +2,12 @@ import { NextResponse } from 'next/server'
 import { renderToStream } from '@react-pdf/renderer'
 import { MaintenancePDFDocument } from '@/lib/formia-pdf'
 import { sendDocumentEmail } from '@/lib/formia-email'
+import { getSupabaseCredentials, getEmailConfig } from '@/lib/formia-client-config'
 import { createClient } from '@supabase/supabase-js'
 import React from 'react'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+// Charger les credentials Supabase depuis la config ou les variables d'environnement
+const { url: supabaseUrl, anonKey: supabaseKey } = getSupabaseCredentials()
 const supabase = createClient(supabaseUrl, supabaseKey)
 
 export async function POST(request) {
@@ -127,10 +128,10 @@ export async function POST(request) {
         emailRecipients.push(...formData.emailsDestinataires)
       }
 
-      // Email de la secrétaire (configuration globale - à terme depuis setup)
-      const secretaireEmail = process.env.SECRETAIRE_EMAIL
-      if (secretaireEmail) {
-        emailCC.push(secretaireEmail)
+      // Email de la secrétaire (depuis la config client ou variable d'environnement)
+      const emailConfig = getEmailConfig()
+      if (emailConfig.secretaire) {
+        emailCC.push(emailConfig.secretaire)
       }
 
       if (emailRecipients.length > 0 || emailCC.length > 0) {

@@ -2,6 +2,67 @@
 
 Toutes les modifications notables de ce projet seront documentées dans ce fichier.
 
+## [1.0.0] - 2025-04-08
+
+### 🎉 Système de Licensing Complet
+
+#### Nouvelles fonctionnalités
+- ✅ **Page `/setup`** - Configuration initiale multi-étapes (Licence, Supabase, SMTP)
+- ✅ **API `/api/config`** - Gestion de la configuration client (GET/POST/DELETE)
+- ✅ **API `/api/verify-license`** - Vérification de licence contre Supabase Central RLD
+- ✅ **ConfigGuard** - Composant de protection des routes avec redirection automatique vers `/setup`
+- ✅ **Configuration dynamique** - Chargement de la config depuis `client.json` ou variables d'environnement
+
+#### Architecture
+- **Auto-hébergement client** : Chaque client héberge sa propre instance FormIA
+- **Supabase Central RLD** : Base de données maître pour gérer les licences
+- **Validation au setup** : Vérification de la clé de licence UUID
+- **Isolation des données** : Chaque client a son propre Supabase
+
+#### Fichiers créés
+- `/app/app/setup/page.js` - Interface setup 3 étapes
+- `/app/app/api/config/route.js` - API configuration
+- `/app/components/formia/ConfigGuard.jsx` - Garde de configuration
+- `/app/lib/formia-client-config.js` - Utilitaires de configuration
+- `/app/config/client.json` - Fichier de config (auto-généré au setup)
+- `/app/FORMIA_LICENSING_SYSTEM.md` - Documentation complète du système
+
+#### Fichiers modifiés
+- `/app/app/formia/layout.js` - Intégration ConfigGuard
+- `/app/app/api/formia/generate-pdf/route.js` - Utilise config dynamique Supabase + Emails
+- `/app/lib/formia-email.js` - Utilise config SMTP dynamique
+
+#### Schéma de configuration
+
+**Étape 1 - Licence** :
+- Clé UUID fournie par RLD
+- Vérification en temps réel
+- Affichage organisation, plan, max users, expiration
+
+**Étape 2 - Supabase** :
+- URL du projet client
+- Anon Key
+- Test de connexion
+
+**Étape 3 - SMTP (optionnel)** :
+- Serveur SMTP (host, port, user, password)
+- Email secrétaire (copie automatique des rapports)
+- Activation on/off
+
+#### Sécurité
+- `client.json` ajouté au `.gitignore`
+- Données sensibles filtrées dans GET `/api/config`
+- Fallback sur variables d'environnement si config manquante
+
+#### SQL requis (Supabase Central RLD)
+```sql
+-- Table formia_licenses
+-- Fonction verify_formia_license(p_license_key UUID)
+```
+Voir `/app/lib/formia-schema-licenses.sql`
+
+---
+
 ## [0.9.0] - 2026-04-08
 
 ### 🎉 Ajouté

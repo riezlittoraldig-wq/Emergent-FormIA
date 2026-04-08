@@ -2,6 +2,7 @@
 
 import { AuthProvider, useAuth } from '@/lib/formia-auth-context'
 import { ProtectedRoute } from '@/components/formia/ProtectedRoute'
+import { ConfigGuard } from '@/components/formia/ConfigGuard'
 import { usePathname, useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { LogOut, User, Settings, Menu } from 'lucide-react'
@@ -201,8 +202,10 @@ function FormIALayoutContent({ children }) {
 
 export default function FormIALayout({ children }) {
   return (
-    <AuthProvider>
-      <FormIALayoutContent>{children}</FormIALayoutContent>
-    </AuthProvider>
+    <ConfigGuard>
+      <AuthProvider>
+        <FormIALayoutContent>{children}</FormIALayoutContent>
+      </AuthProvider>
+    </ConfigGuard>
   )
 }
