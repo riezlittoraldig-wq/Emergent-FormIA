@@ -221,6 +221,49 @@ export default function FormIAAdminPage() {
                 </div>
               </CardHeader>
               <CardContent>
+                {/* Section Import Excel */}
+                <div className="mb-8">
+                  <ImportExcel
+                    title="Import Excel - Agences"
+                    templateName="template_agences"
+                    templateColumns={[
+                      { key: 'name', label: 'Nom', required: true, example: 'Agence Saint-Gilles-Croix-de-Vie' },
+                      { key: 'code', label: 'Code', example: 'SGCV' },
+                      { key: 'address', label: 'Adresse', example: '15 rue des Couvreurs' },
+                      { key: 'postal_code', label: 'Code postal', example: '85800' },
+                      { key: 'city', label: 'Ville', example: 'SAINT GILLES CROIX DE VIE' },
+                      { key: 'phone', label: 'Téléphone', example: '02.51.60.00.00' },
+                      { key: 'email', label: 'Email', example: 'contact@allez.fr' }
+                    ]}
+                    exampleData={[
+                      { name: 'Agence Saint-Gilles', code: 'SGCV', address: '15 rue des Couvreurs', postal_code: '85800', city: 'SAINT GILLES CROIX DE VIE', phone: '02.51.60.00.00', email: 'stgilles@allez.fr' },
+                      { name: 'Agence Nantes', code: 'NAN', address: '10 rue de la Loire', postal_code: '44000', city: 'NANTES', phone: '02.40.00.00.00', email: 'nantes@allez.fr' }
+                    ]}
+                    onImport={async (data) => {
+                      const results = await Promise.allSettled(
+                        data.map(row => 
+                          supabase.from('formia_agencies').insert({
+                            entity_id: selectedEntity.id,
+                            name: row.name,
+                            code: row.code || null,
+                            address: row.address || null,
+                            postal_code: row.postal_code || null,
+                            city: row.city || null,
+                            phone: row.phone || null,
+                            email: row.email || null
+                          })
+                        )
+                      )
+                      const errors = results.filter(r => r.status === 'rejected')
+                      if (errors.length > 0) {
+                        console.error('Import errors:', errors)
+                        throw new Error(`${errors.length} ligne(s) en erreur`)
+                      }
+                      loadAgencies()
+                    }}
+                  />
+                </div>
+
                 {editingAgency && (
                   <Card className="mb-6 border-red-600">
                     <CardContent className="p-4 space-y-4">
@@ -305,6 +348,54 @@ export default function FormIAAdminPage() {
                 </div>
               </CardHeader>
               <CardContent>
+                {/* Section Import Excel */}
+                <div className="mb-8">
+                  <ImportExcel
+                    title="Import Excel - Chantiers"
+                    templateName="template_chantiers"
+                    templateColumns={[
+                      { key: 'code_chantier', label: 'Code chantier', required: true, example: 'GX265947VEN' },
+                      { key: 'client_name', label: 'Nom client', required: true, example: 'Camping Bel Air' },
+                      { key: 'address', label: 'Adresse', example: '6 Allée de la chevreuse' },
+                      { key: 'postal_code', label: 'Code postal', example: '85180' },
+                      { key: 'city', label: 'Ville', example: 'Les sables d\'olonne' },
+                      { key: 'responsable_affaire', label: 'Responsable', example: 'Justine Palette' },
+                      { key: 'emails', label: 'Emails (séparés par virgule)', example: 'contact1@mail.com, contact2@mail.com' }
+                    ]}
+                    exampleData={[
+                      { code_chantier: 'GX265947VEN', client_name: 'Camping Bel Air', address: '6 Allée de la chevreuse', postal_code: '85180', city: 'Les sables d\'olonne', responsable_affaire: 'Justine Palette', emails: 'justine.palette@example.com' },
+                      { code_chantier: 'CH202501', client_name: 'Hôtel Les Sables', address: '12 avenue de la mer', postal_code: '85100', city: 'Les Sables-d\'Olonne', responsable_affaire: 'Pierre Martin', emails: 'p.martin@hotel.fr, contact@hotel.fr' }
+                    ]}
+                    onImport={async (data) => {
+                      const results = await Promise.allSettled(
+                        data.map(row => {
+                          // Convertir emails en array
+                          const emailsArray = typeof row.emails === 'string' 
+                            ? row.emails.split(',').map(e => e.trim()).filter(Boolean)
+                            : []
+                          
+                          return supabase.from('formia_chantiers').insert({
+                            entity_id: selectedEntity.id,
+                            code_chantier: row.code_chantier,
+                            client_name: row.client_name,
+                            address: row.address || null,
+                            postal_code: row.postal_code || null,
+                            city: row.city || null,
+                            responsable_affaire: row.responsable_affaire || null,
+                            emails: emailsArray.length > 0 ? emailsArray : null
+                          })
+                        })
+                      )
+                      const errors = results.filter(r => r.status === 'rejected')
+                      if (errors.length > 0) {
+                        console.error('Import errors:', errors)
+                        throw new Error(`${errors.length} ligne(s) en erreur`)
+                      }
+                      loadChantiers()
+                    }}
+                  />
+                </div>
+
                 {editingChantier && (
                   <Card className="mb-6 border-red-600">
                     <CardContent className="p-4 space-y-4">
