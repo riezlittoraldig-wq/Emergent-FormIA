@@ -191,6 +191,38 @@ export function MaintenanceHTBTForm({ entity, agency, documentType, onBack }) {
     }
   }
 
+  const saveDraft = async () => {
+    setSaving(true)
+    try {
+      const docData = {
+        document_number: formData.documentNumber,
+        entity_id: entity.id,
+        agency_id: agency.id,
+        document_type: 'maintenance_htbt',
+        client_name: formData.clientName,
+        data_json: formData,
+        status: 'draft',
+        created_by: user?.id
+      }
+
+      const { data, error } = await supabase
+        .from('formia_documents')
+        .insert(docData)
+        .select()
+        .single()
+
+      if (error) throw error
+
+      toast.success('✅ Brouillon enregistré avec succès !')
+      console.log('Draft saved:', data)
+    } catch (error) {
+      console.error('Error saving draft:', error)
+      toast.error('❌ Erreur lors de l\'enregistrement du brouillon')
+    } finally {
+      setSaving(false)
+    }
+  }
+
   const handleGeneratePDF = () => {
     setShowPreview(true)
   }
@@ -549,14 +581,33 @@ export function MaintenanceHTBTForm({ entity, agency, documentType, onBack }) {
                 />
                 <div className="flex justify-between pt-6">
                   <Button variant="outline" onClick={() => setActiveTab('photos-apres')}>Précédent</Button>
-                  <Button 
-                    onClick={handleGeneratePDF}
-                    disabled={!canGeneratePDF()}
-                    className="bg-red-600 hover:bg-red-700"
-                  >
-                    <Eye className="w-4 h-4 mr-2" />
-                    Prévisualiser le PDF
-                  </Button>
+                  <div className="flex gap-3">
+                    <Button 
+                      onClick={saveDraft}
+                      disabled={saving || !formData.clientName}
+                      variant="outline"
+                    >
+                      {saving ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Enregistrement...
+                        </>
+                      ) : (
+                        <>
+                          <Save className="w-4 h-4 mr-2" />
+                          Enregistrer brouillon
+                        </>
+                      )}
+                    </Button>
+                    <Button 
+                      onClick={handleGeneratePDF}
+                      disabled={!canGeneratePDF()}
+                      className="bg-slate-900 hover:bg-slate-800"
+                    >
+                      <Eye className="w-4 h-4 mr-2" />
+                      Prévisualiser le PDF
+                    </Button>
+                  </div>
                 </div>
               </div>
             </TabsContent>

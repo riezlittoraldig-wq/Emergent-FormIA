@@ -705,7 +705,8 @@ export function MaintenancePDFDocument({ formData, entity }) {
 
 // Composant pour les tableaux de contrôles
 function ControleTable({ data }) {
-  if (!data || data.length === 0) return null
+  // Afficher le tableau même si vide, pour montrer les cases non cochées
+  if (!data) return null
   
   return (
     <View style={{ marginBottom: 20 }}>
@@ -715,7 +716,7 @@ function ControleTable({ data }) {
             <Text style={styles.checkmark}>{item.vu ? '☑' : '☐'}</Text>
           </View>
           <View style={styles.tableColObs}>
-            <Text>{item.observations || '-'}</Text>
+            <Text>{item.label || item.observations || '-'}</Text>
           </View>
         </View>
       ))}
