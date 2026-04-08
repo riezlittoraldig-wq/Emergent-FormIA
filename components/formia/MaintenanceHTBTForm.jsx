@@ -68,11 +68,11 @@ export function MaintenanceHTBTForm({ entity, agency, documentType, onBack }) {
       divers: '',
       photo: null
     },
-    controlesAccessoires: TABLEAUX_CONTROLES.accessoiresSecurite.controles.map(() => ({ vu: false, observations: '' })),
-    controlesDisjoncteurBT: TABLEAUX_CONTROLES.disjoncteurBT.controles.map(() => ({ vu: false, observations: '' })),
-    controlesCellulesHTA: TABLEAUX_CONTROLES.cellulesHTA.controles.map(() => ({ vu: false, observations: '' })),
-    controlesTransformateur: TABLEAUX_CONTROLES.transformateur.controles.map(() => ({ vu: false, observations: '' })),
-    controlesLocalPoste: TABLEAUX_CONTROLES.localPoste.controles.map(() => ({ vu: false, observations: '' })),
+    controlesAccessoires: TABLEAUX_CONTROLES.accessoiresSecurite.controles.map((c) => ({ label: c, vu: false, observations: '' })),
+    controlesDisjoncteurBT: TABLEAUX_CONTROLES.disjoncteurBT.controles.map((c) => ({ label: c, vu: false, observations: '' })),
+    controlesCellulesHTA: TABLEAUX_CONTROLES.cellulesHTA.controles.map((c) => ({ label: c, vu: false, observations: '' })),
+    controlesTransformateur: TABLEAUX_CONTROLES.transformateur.controles.map((c) => ({ label: c, vu: false, observations: '' })),
+    controlesLocalPoste: TABLEAUX_CONTROLES.localPoste.controles.map((c) => ({ label: c, vu: false, observations: '' })),
     photosApres: [],
     observationsSignatures: {
       observations: '',
@@ -202,7 +202,7 @@ export function MaintenanceHTBTForm({ entity, agency, documentType, onBack }) {
         client_name: formData.clientName,
         data_json: formData,
         status: 'draft',
-        created_by: user?.id
+        created_by: profile?.user_id || user?.id
       }
 
       const { data, error } = await supabase
@@ -211,13 +211,16 @@ export function MaintenanceHTBTForm({ entity, agency, documentType, onBack }) {
         .select()
         .single()
 
-      if (error) throw error
+      if (error) {
+        console.error('Error saving draft:', error)
+        throw error
+      }
 
       toast.success('✅ Brouillon enregistré avec succès !')
       console.log('Draft saved:', data)
     } catch (error) {
       console.error('Error saving draft:', error)
-      toast.error('❌ Erreur lors de l\'enregistrement du brouillon')
+      toast.error(`❌ Erreur : ${error.message || 'Impossible d\'enregistrer'}`)
     } finally {
       setSaving(false)
     }
