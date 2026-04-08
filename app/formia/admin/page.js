@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { supabase } from '@/lib/formia-supabase'
 import { ImportExcel } from '@/components/formia/ImportExcel'
 import { EntitiesTab } from '@/components/formia/EntitiesTab'
-import { Plus, Edit, Trash2, Save, X, Building2, Briefcase, Building, Upload, MapPin } from 'lucide-react'
+import { Plus, Edit, Trash2, Save, X, Building2, Briefcase, Building, Upload, MapPin, Users } from 'lucide-react'
 import { toast } from 'sonner'
 
 export default function FormIAAdminPage() {
@@ -18,13 +18,16 @@ export default function FormIAAdminPage() {
   const [selectedEntity, setSelectedEntity] = useState(null)
   const [agencies, setAgencies] = useState([])
   const [chantiers, setChantiers] = useState([])
+  const [users, setUsers] = useState([])
   const [editingEntity, setEditingEntity] = useState(null)
   const [editingAgency, setEditingAgency] = useState(null)
   const [editingChantier, setEditingChantier] = useState(null)
+  const [editingUser, setEditingUser] = useState(null)
   const [uploadingLogo, setUploadingLogo] = useState(false)
 
   useEffect(() => {
     loadEntities()
+    loadUsers()
   }, [])
 
   useEffect(() => {
@@ -41,6 +44,56 @@ export default function FormIAAdminPage() {
       setSelectedEntity(data[0])
     }
   }
+
+  const loadUsers = async () => {
+    const { data } = await supabase
+      .from('formia_user_profiles')
+      .select('*, formia_entities(name), formia_agencies(name, code)')
+      .order('nom')
+    setUsers(data || [])
+  }
+
+  const handleSaveUser = async () => {
+    try {
+      if (editingUser.id) {
+        const { error } = await supabase
+          .from('formia_user_profiles')
+          .update({
+            prenom: editingUser.prenom,
+            nom: editingUser.nom,
+            phone: editingUser.phone,
+            role: editingUser.role,
+            entity_id: editingUser.entity_id || null,
+            agency_id: editingUser.agency_id || null
+          })
+          .eq('id', editingUser.id)
+        
+        if (error) throw error
+        toast.success('Utilisateur mis à jour')
+        setEditingUser(null)
+        loadUsers()
+      } else {
+        toast.error('Création d\'utilisateur : Utilisez Supabase Auth Dashboard')
+      }
+    } catch (error) {
+      console.error('Error saving user:', error)
+      toast.error('Erreur lors de l\'enregistrement')
+    }
+  }
+
+  const handleDeleteUser = async (id) => {
+    if (!confirm('Êtes-vous sûr de vouloir supprimer cet utilisateur ?')) return
+    try {
+      const { error } = await supabase.from('formia_user_profiles').delete().eq('id', id)
+      if (error) throw error
+      toast.success('Utilisateur supprimé')
+      loadUsers()
+    } catch (error) {
+      console.error('Error deleting user:', error)
+      toast.error('Erreur lors de la suppression')
+    }
+  }
+
 
   const loadAgencies = async () => {
     const { data } = await supabase
@@ -200,6 +253,10 @@ export default function FormIAAdminPage() {
             <TabsTrigger value="chantiers">
               <Briefcase className="w-4 h-4 mr-2" />
               Chantiers
+            </TabsTrigger>
+            <TabsTrigger value="users">
+              <Users className="w-4 h-4 mr-2" />
+              Utilisateurs
             </TabsTrigger>
           </TabsList>
 
@@ -563,6 +620,134 @@ export default function FormIAAdminPage() {
                             <Edit className="w-4 h-4" />
                           </Button>
                           <Button variant="ghost" size="sm" onClick={() => handleDeleteChantier(chantier.id)}>
+                            <Trash2 className="w-4 h-4 text-red-600" />
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Tab Utilisateurs */}
+          <TabsContent value="users">
+            <Card>
+              <CardHeader>
+                <div className="flex justify-between items-center">
+                  <CardTitle>Gestion des utilisateurs</CardTitle>
+                  <Button variant="outline" onClick={() => window.open('https://supabase.com/dashboard', '_blank')}>
+                    <Plus className="w-4 h-4 mr-2" />
+                    Créer un utilisateur (Supabase)
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {editingUser && (
+                  <Card className="mb-6 border-blue-600">
+                    <CardContent className="p-4 space-y-4">
+                      <div className="grid md:grid-cols-2 gap-4">
+                        <div>
+                          <Label>Prénom *</Label>
+                          <Input value={editingUser.prenom || ''} onChange={(e) => setEditingUser({...editingUser, prenom: e.target.value})} />
+                        </div>
+                        <div>
+                          <Label>Nom *</Label>
+                          <Input value={editingUser.nom || ''} onChange={(e) => setEditingUser({...editingUser, nom: e.target.value})} />
+                        </div>
+                      </div>
+                      <div>
+                        <Label>Téléphone</Label>
+                        <Input value={editingUser.phone || ''} onChange={(e) => setEditingUser({...editingUser, phone: e.target.value})} />
+                      </div>
+                      <div>
+                        <Label>Rôle *</Label>
+                        <select 
+                          className="w-full p-2 border rounded"
+                          value={editingUser.role || 'technicien'}
+                          onChange={(e) => setEditingUser({...editingUser, role: e.target.value})}
+                        >
+                          <option value="super_admin">Super Admin</option>
+                          <option value="admin_agence">Admin Agence</option>
+                          <option value="technicien">Technicien</option>
+                        </select>
+                      </div>
+                      {(editingUser.role === 'admin_agence' || editingUser.role === 'technicien') && (
+                        <div>
+                          <Label>Entité {editingUser.role === 'admin_agence' && '*'}</Label>
+                          <select 
+                            className="w-full p-2 border rounded"
+                            value={editingUser.entity_id || ''}
+                            onChange={(e) => setEditingUser({...editingUser, entity_id: e.target.value || null})}
+                          >
+                            <option value="">-- Aucune --</option>
+                            {entities.map(entity => (
+                              <option key={entity.id} value={entity.id}>{entity.name}</option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+                      {editingUser.role === 'technicien' && (
+                        <div>
+                          <Label>Agence *</Label>
+                          <select 
+                            className="w-full p-2 border rounded"
+                            value={editingUser.agency_id || ''}
+                            onChange={(e) => setEditingUser({...editingUser, agency_id: e.target.value || null})}
+                          >
+                            <option value="">-- Aucune --</option>
+                            {agencies.map(agency => (
+                              <option key={agency.id} value={agency.id}>{agency.name} ({agency.code})</option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+                      <div className="flex gap-2">
+                        <Button onClick={handleSaveUser}><Save className="w-4 h-4 mr-2" />Enregistrer</Button>
+                        <Button variant="outline" onClick={() => setEditingUser(null)}><X className="w-4 h-4 mr-2" />Annuler</Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                <div className="space-y-2">
+                  {users.length === 0 && (
+                    <div className="text-center py-8 text-slate-500">
+                      <Users className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                      <p>Aucun utilisateur pour le moment</p>
+                      <p className="text-sm mt-1">Créez des utilisateurs via Supabase Auth Dashboard</p>
+                    </div>
+                  )}
+                  {users.map(user => (
+                    <Card key={user.id}>
+                      <CardContent className="p-4 flex justify-between items-start">
+                        <div>
+                          <div className="flex items-center gap-2 mb-1">
+                            <h3 className="font-semibold">{user.prenom} {user.nom}</h3>
+                            <span className={`px-2 py-0.5 text-xs font-medium rounded ${
+                              user.role === 'super_admin' ? 'bg-purple-100 text-purple-700' :
+                              user.role === 'admin_agence' ? 'bg-blue-100 text-blue-700' :
+                              'bg-green-100 text-green-700'
+                            }`}>
+                              {user.role === 'super_admin' && 'Super Admin'}
+                              {user.role === 'admin_agence' && 'Admin Agence'}
+                              {user.role === 'technicien' && 'Technicien'}
+                            </span>
+                          </div>
+                          {user.formia_entities && (
+                            <p className="text-sm text-slate-500">Entité: {user.formia_entities.name}</p>
+                          )}
+                          {user.formia_agencies && (
+                            <p className="text-sm text-slate-500">Agence: {user.formia_agencies.name} ({user.formia_agencies.code})</p>
+                          )}
+                          {user.phone && <p className="text-sm text-slate-600">☎️ {user.phone}</p>}
+                        </div>
+                        <div className="flex gap-2">
+                          <Button variant="ghost" size="sm" onClick={() => setEditingUser(user)}>
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                          <Button variant="ghost" size="sm" onClick={() => handleDeleteUser(user.id)}>
                             <Trash2 className="w-4 h-4 text-red-600" />
                           </Button>
                         </div>

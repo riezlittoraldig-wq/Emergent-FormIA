@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -12,9 +12,11 @@ import { CelluleProtectionSection } from './CelluleProtectionSection'
 import { DisjoncteurGeneralSection } from './DisjoncteurGeneralSection'
 import { TableauControlesSection } from './TableauControlesSection'
 import { ObservationsSignaturesSection } from './ObservationsSignaturesSection'
+import { TechniciensSection } from './TechniciensSection'
 import { ChantierSearch } from './ChantierSearch'
 import { PDFPreview } from './PDFPreview'
 import { supabase } from '@/lib/formia-supabase'
+import { useAuth } from '@/lib/formia-auth-context'
 import { TABLEAUX_CONTROLES } from '@/lib/formia-config'
 import { Save, FileDown, Eye, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
@@ -23,6 +25,7 @@ export function MaintenanceHTBTForm({ entity, agency, documentType, onBack }) {
   const [activeTab, setActiveTab] = useState('general')
   const [saving, setSaving] = useState(false)
   const [showPreview, setShowPreview] = useState(false)
+  const { user, profile } = useAuth()
   
   const [formData, setFormData] = useState({
     documentNumber: `${Date.now()}`,
@@ -75,8 +78,30 @@ export function MaintenanceHTBTForm({ entity, agency, documentType, onBack }) {
       observations: '',
       signatureIntervenant: '',
       signatureClient: ''
-    }
+    },
+    technicienPrincipal: {
+      user_id: user?.id || '',
+      prenom: profile?.prenom || '',
+      nom: profile?.nom || '',
+      temps_intervention: ''
+    },
+    autresTechniciens: []
   })
+
+  // Mettre à jour le technicien principal quand le profil est chargé
+  useEffect(() => {
+    if (profile && user) {
+      setFormData(prev => ({
+        ...prev,
+        technicienPrincipal: {
+          user_id: user.id,
+          prenom: profile.prenom,
+          nom: profile.nom,
+          temps_intervention: prev.technicienPrincipal.temps_intervention || ''
+        }
+      }))
+    }
+  }, [profile, user])
 
   const updateFormData = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }))
@@ -158,6 +183,14 @@ export function MaintenanceHTBTForm({ entity, agency, documentType, onBack }) {
     }
   }
 
+  const handleTechniciensChange = (autresTechniciens, technicienPrincipal, isPrincipal = false) => {
+    if (isPrincipal) {
+      setFormData({ ...formData, technicienPrincipal })
+    } else {
+      setFormData({ ...formData, autresTechniciens })
+    }
+  }
+
   const handleGeneratePDF = () => {
     setShowPreview(true)
   }
@@ -168,6 +201,7 @@ export function MaintenanceHTBTForm({ entity, agency, documentType, onBack }) {
 
   const tabs = [
     { id: 'general', label: 'Général' },
+    { id: 'techniciens', label: 'Techniciens' },
     { id: 'photos-avant', label: 'Photos avant' },
     { id: 'transformateur', label: 'Transformateur' },
     { id: 'cellules', label: 'Cellules HT' },
@@ -207,7 +241,7 @@ export function MaintenanceHTBTForm({ entity, agency, documentType, onBack }) {
           </Card>
 
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-4 lg:grid-cols-8 mb-6">
+            <TabsList className="grid w-full grid-cols-4 lg:grid-cols-9 mb-6">
               {tabs.map(tab => (
                 <TabsTrigger key={tab.id} value={tab.id}>{tab.label}</TabsTrigger>
               ))}
@@ -350,6 +384,16 @@ export function MaintenanceHTBTForm({ entity, agency, documentType, onBack }) {
                   </div>
                 </CardContent>
               </Card>
+            </TabsContent>
+
+
+            {/* Onglet Techniciens */}
+            <TabsContent value="techniciens">
+              <TechniciensSection
+                technicienPrincipal={formData.technicienPrincipal}
+                autresTechniciens={formData.autresTechniciens}
+                onChange={handleTechniciensChange}
+              />
             </TabsContent>
 
             {/* Onglet 2: Photos avant */}
