@@ -79,20 +79,27 @@ export function EntitiesTab({ entities, onReload }) {
 
     setUploadingLogo(true)
     try {
+      console.log('Uploading logo for entity:', editingEntity.id)
+      console.log('File:', file.name, file.type, file.size)
+      
       const logoUrl = await formiaStorage.uploadLogo(file, editingEntity.id)
+      
+      console.log('Logo uploaded, URL:', logoUrl)
       setEditingEntity({ ...editingEntity, logo_url: logoUrl })
       
       // Mettre à jour directement dans la base
-      await supabase
+      const { error: updateError } = await supabase
         .from('formia_entities')
         .update({ logo_url: logoUrl })
         .eq('id', editingEntity.id)
+      
+      if (updateError) throw updateError
       
       toast.success('Logo uploadé avec succès')
       onReload()
     } catch (error) {
       console.error('Error uploading logo:', error)
-      toast.error('Erreur lors de l\'upload du logo')
+      toast.error(`Erreur upload: ${error.message || error.toString()}`)
     } finally {
       setUploadingLogo(false)
     }
