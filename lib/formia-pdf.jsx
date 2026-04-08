@@ -209,6 +209,59 @@ const styles = StyleSheet.create({
     right: 30,
     fontSize: 10,
     color: '#666'
+  },
+  techniciensBox: {
+    border: '2px solid #2563eb',
+    borderRadius: 8,
+    padding: 15,
+    marginBottom: 20,
+    backgroundColor: '#eff6ff'
+  },
+  techniciensTitle: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: '#1e40af',
+    marginBottom: 10
+  },
+  technicienRow: {
+    flexDirection: 'row',
+    marginBottom: 6,
+    paddingBottom: 6,
+    borderBottom: '1px solid #cbd5e1'
+  },
+  technicienName: {
+    flex: 1,
+    color: '#333',
+    fontSize: 10
+  },
+  technicienRole: {
+    width: 80,
+    fontSize: 9,
+    color: '#1e40af',
+    fontWeight: 'bold'
+  },
+  technicienTemps: {
+    width: 60,
+    fontSize: 10,
+    color: '#333',
+    textAlign: 'right'
+  },
+  tempsTotal: {
+    flexDirection: 'row',
+    marginTop: 10,
+    paddingTop: 10,
+    borderTop: '2px solid #1e40af'
+  },
+  tempsTotalLabel: {
+    flex: 1,
+    fontSize: 11,
+    fontWeight: 'bold',
+    color: '#1e40af'
+  },
+  tempsTotalValue: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: '#1e40af'
   }
 })
 
@@ -313,6 +366,59 @@ export function MaintenancePDFDocument({ formData, entity }) {
             </>
           )}
         </View>
+
+        {/* Section Techniciens Intervenants */}
+        {(formData.technicienPrincipal || formData.autresTechniciens?.length > 0) && (
+          <View style={styles.techniciensBox}>
+            <Text style={styles.techniciensTitle}>TECHNICIENS INTERVENANTS</Text>
+            
+            {/* Technicien principal */}
+            {formData.technicienPrincipal && (formData.technicienPrincipal.prenom || formData.technicienPrincipal.nom) && (
+              <View style={styles.technicienRow}>
+                <Text style={styles.technicienRole}>Principal</Text>
+                <Text style={styles.technicienName}>
+                  {formData.technicienPrincipal.prenom} {formData.technicienPrincipal.nom}
+                </Text>
+                {formData.technicienPrincipal.temps_intervention && (
+                  <Text style={styles.technicienTemps}>
+                    {formData.technicienPrincipal.temps_intervention}h
+                  </Text>
+                )}
+              </View>
+            )}
+
+            {/* Autres techniciens */}
+            {formData.autresTechniciens?.map((tech, index) => (
+              tech.prenom && tech.nom && (
+                <View key={index} style={styles.technicienRow}>
+                  <Text style={styles.technicienRole}>Intervenant</Text>
+                  <Text style={styles.technicienName}>
+                    {tech.prenom} {tech.nom}
+                  </Text>
+                  {tech.temps_intervention && (
+                    <Text style={styles.technicienTemps}>
+                      {tech.temps_intervention}h
+                    </Text>
+                  )}
+                </View>
+              )
+            ))}
+
+            {/* Temps total */}
+            {(formData.technicienPrincipal?.temps_intervention || formData.autresTechniciens?.some(t => t.temps_intervention)) && (
+              <View style={styles.tempsTotal}>
+                <Text style={styles.tempsTotalLabel}>TEMPS TOTAL D'INTERVENTION</Text>
+                <Text style={styles.tempsTotalValue}>
+                  {(
+                    parseFloat(formData.technicienPrincipal?.temps_intervention || 0) +
+                    (formData.autresTechniciens?.reduce((sum, t) => sum + parseFloat(t.temps_intervention || 0), 0) || 0)
+                  ).toFixed(1)}h
+                </Text>
+              </View>
+            )}
+          </View>
+        )}
+
 
         <Footer />
         <Text style={styles.pageNumber} render={({ pageNumber }) => `${pageNumber}`} fixed />
