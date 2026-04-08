@@ -1,0 +1,3 @@
+# Ne pas versionner les fichiers de configuration client
+client.json
+*.local.json
