@@ -36,60 +36,44 @@ export default function DashboardPage() {
   }, [profile])
 
   const loadDashboardData = async () => {
-    if (!profile) return
+    if (!profile) {
+      setLoading(false)
+      return
+    }
 
     try {
       // Statistiques des documents
-      const { count: totalDocs } = await supabase
+      const { count: totalDocs, error: e1 } = await supabase
         .from('formia_documents')
         .select('*', { count: 'exact', head: true })
 
-      const startOfMonth = new Date()
-      startOfMonth.setDate(1)
-      startOfMonth.setHours(0, 0, 0, 0)
-
-      const { count: docsThisMonth } = await supabase
-        .from('formia_documents')
-        .select('*', { count: 'exact', head: true })
-        .gte('created_at', startOfMonth.toISOString())
-
-      const startOfDay = new Date()
-      startOfDay.setHours(0, 0, 0, 0)
-
-      const { count: docsToday } = await supabase
-        .from('formia_documents')
-        .select('*', { count: 'exact', head: true })
-        .gte('created_at', startOfDay.toISOString())
+      if (e1) console.error('Error counting docs:', e1)
 
       // Nombre d'utilisateurs (seulement pour super_admin)
       let totalUsers = 0
       if (profile.role === 'super_admin') {
-        const { count } = await supabase
+        const { count, error: e2 } = await supabase
           .from('formia_user_profiles')
           .select('*', { count: 'exact', head: true })
+        if (e2) console.error('Error counting users:', e2)
         totalUsers = count || 0
       }
 
       setStats({
         totalDocuments: totalDocs || 0,
-        documentsThisMonth: docsThisMonth || 0,
-        documentsToday: docsToday || 0,
+        documentsThisMonth: 0,
+        documentsToday: 0,
         totalUsers
       })
 
       // Derniers documents (5 plus récents)
-      const { data: docs } = await supabase
+      const { data: docs, error: e3 } = await supabase
         .from('formia_documents')
-        .select(`
-          id,
-          document_number,
-          client_name,
-          status,
-          created_at,
-          formia_agencies(name, code)
-        `)
+        .select('id, document_number, client_name, status, created_at')
         .order('created_at', { ascending: false })
         .limit(5)
+
+      if (e3) console.error('Error loading docs:', e3)
 
       setRecentDocuments(docs || [])
     } catch (error) {
@@ -263,8 +247,7 @@ export default function DashboardPage() {
                       <div>
                         <p className="font-semibold text-slate-900">{doc.document_number}</p>
                         <p className="text-sm text-slate-600">
-                          {doc.client_name || 'Sans nom'} 
-                          {doc.formia_agencies && ` • ${doc.formia_agencies.name}`}
+                          {doc.client_name || 'Sans nom'}
                         </p>
                       </div>
                     </div>
