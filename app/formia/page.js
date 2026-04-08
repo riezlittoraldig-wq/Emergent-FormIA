@@ -40,14 +40,19 @@ export default function FormIAPage() {
       // Auto-select ALLEZ ENERGIES if exists
       const allezEnergies = entitiesData?.find(e => e.name === 'ALLEZ ENERGIES')
       if (allezEnergies) {
-        setSelectedEntity(allezEnergies)
-        await loadAgencies(allezEnergies.id)
+        await handleSelectEntity(allezEnergies)
       }
     } catch (error) {
       console.error('Error loading data:', error)
     } finally {
       setLoading(false)
     }
+  }
+
+  const handleSelectEntity = async (entity) => {
+    setSelectedEntity(entity)
+    setSelectedAgency(null)
+    await loadAgencies(entity.id)
   }
 
   const loadAgencies = async (entityId) => {
@@ -108,22 +113,26 @@ export default function FormIAPage() {
                     <Card 
                       key={entity.id}
                       className="cursor-pointer hover:shadow-md transition-shadow border-2 hover:border-red-600"
-                      onClick={() => {
-                        setSelectedEntity(entity)
-                        setStep('select-type')
-                      }}
+                      onClick={() => handleSelectEntity(entity)}
                     >
                       <CardContent className="p-6">
                         <div className="flex items-center gap-4">
                           {entity.logo_url && (
-                            <img src={entity.logo_url} alt={entity.name} className="h-12 object-contain" />
+                            <img 
+                              src={entity.logo_url} 
+                              alt={entity.name} 
+                              className="h-16 w-auto object-contain"
+                              style={{ maxWidth: '200px' }}
+                            />
                           )}
-                          <div>
-                            <h3 className="font-semibold text-lg">{entity.name}</h3>
-                            {entity.contact_info?.group && (
-                              <p className="text-sm text-slate-600">{entity.contact_info.group}</p>
-                            )}
-                          </div>
+                          {!entity.logo_url && (
+                            <div>
+                              <h3 className="font-semibold text-lg">{entity.name}</h3>
+                              {entity.contact_info?.group && (
+                                <p className="text-sm text-slate-600">{entity.contact_info.group}</p>
+                              )}
+                            </div>
+                          )}
                         </div>
                       </CardContent>
                     </Card>
@@ -205,13 +214,11 @@ export default function FormIAPage() {
                     </CardDescription>
                   </div>
                   <Button variant="outline" onClick={() => {
-                    if (agencies.length > 0) {
-                      setSelectedAgency(null)
-                      setStep('select-agency')
-                    } else {
-                      setStep('select-entity')
-                    }
-                  }}>Retour</Button>
+                    setSelectedEntity(null)
+                    setSelectedAgency(null)
+                    setAgencies([])
+                    setStep('select-entity')
+                  }}>Changer d'entité</Button>
                 </div>
               </CardHeader>
               <CardContent>
