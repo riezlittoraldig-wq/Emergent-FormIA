@@ -24,37 +24,37 @@ export async function POST(request) {
       ...formData,
       controlesAccessoires: Array.isArray(formData.controlesAccessoires) 
         ? formData.controlesAccessoires.map(c => ({
-            label: String(c?.label || ''),
+            label: c?.label || c || '',
             vu: Boolean(c?.vu),
-            observations: String(c?.observations || '')
+            observations: c?.observations || ''
           }))
         : [],
       controlesDisjoncteurBT: Array.isArray(formData.controlesDisjoncteurBT)
         ? formData.controlesDisjoncteurBT.map(c => ({
-            label: String(c?.label || ''),
+            label: c?.label || c || '',
             vu: Boolean(c?.vu),
-            observations: String(c?.observations || '')
+            observations: c?.observations || ''
           }))
         : [],
       controlesCellulesHTA: Array.isArray(formData.controlesCellulesHTA)
         ? formData.controlesCellulesHTA.map(c => ({
-            label: String(c?.label || ''),
+            label: c?.label || c || '',
             vu: Boolean(c?.vu),
-            observations: String(c?.observations || '')
+            observations: c?.observations || ''
           }))
         : [],
       controlesTransformateur: Array.isArray(formData.controlesTransformateur)
         ? formData.controlesTransformateur.map(c => ({
-            label: String(c?.label || ''),
+            label: c?.label || c || '',
             vu: Boolean(c?.vu),
-            observations: String(c?.observations || '')
+            observations: c?.observations || ''
           }))
         : [],
       controlesLocalPoste: Array.isArray(formData.controlesLocalPoste)
         ? formData.controlesLocalPoste.map(c => ({
-            label: String(c?.label || ''),
+            label: c?.label || c || '',
             vu: Boolean(c?.vu),
-            observations: String(c?.observations || '')
+            observations: c?.observations || ''
           }))
         : []
     }

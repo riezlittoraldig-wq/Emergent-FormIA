@@ -28,7 +28,10 @@ function FormIAHeader() {
     <header className="bg-white border-b border-slate-200 sticky top-0 z-50 shadow-sm">
       <div className="container mx-auto px-4 py-3 flex justify-between items-center">
         <div className="flex items-center gap-4">
-          <div>
+          <div 
+            className="cursor-pointer hover:opacity-80 transition-opacity"
+            onClick={() => router.push('/formia')}
+          >
             <h1 className="text-xl font-bold leading-none">
               <span className="text-slate-900">Form</span>
               <span className="text-red-600">IA</span>
