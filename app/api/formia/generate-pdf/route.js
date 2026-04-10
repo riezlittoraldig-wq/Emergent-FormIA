@@ -53,65 +53,65 @@ export async function POST(request) {
 
         // 2. Sauvegarder le document dans formia_documents
         const { data: docData, error: docError } = await supabase
-        .from('formia_documents')
-        .insert({
-          document_number: formData.documentNumber,
-          entity_id: entity?.id || null,
-          agency_id: agency?.id || null,
-          document_type: 'maintenance_htbt',
-          client_name: formData.clientName,
-          chantier_id: formData.chantier?.id || null,
-          data_json: formData,
-          pdf_url: pdfUrl,
-          status: 'completed',
-          created_by: userId,
-          completed_at: new Date().toISOString()
-        })
-        .select()
-        .single()
-
-      if (docError) {
-        console.error('Document save error:', docError)
-      } else {
-        documentId = docData.id
-
-        // 3. Sauvegarder les techniciens
-        const techniciens = []
-        
-        // Technicien principal
-        if (formData.technicienPrincipal?.user_id) {
-          techniciens.push({
-            document_id: documentId,
-            user_id: formData.technicienPrincipal.user_id,
-            role: 'principal',
-            temps_intervention: parseFloat(formData.technicienPrincipal.temps_intervention) || null
+          .from('formia_documents')
+          .insert({
+            document_number: formData.documentNumber,
+            entity_id: entity?.id || null,
+            agency_id: agency?.id || null,
+            document_type: 'maintenance_htbt',
+            client_name: formData.clientName,
+            chantier_id: formData.chantier?.id || null,
+            data_json: formData,
+            pdf_url: pdfUrl,
+            status: 'completed',
+            created_by: userId,
+            completed_at: new Date().toISOString()
           })
-        }
+          .select()
+          .single()
 
-        // Autres techniciens
-        if (formData.autresTechniciens?.length > 0) {
-          formData.autresTechniciens.forEach(tech => {
-            if (tech.user_id) {
-              techniciens.push({
-                document_id: documentId,
-                user_id: tech.user_id,
-                role: 'intervenant',
-                temps_intervention: parseFloat(tech.temps_intervention) || null
-              })
+        if (docError) {
+          console.error('Document save error:', docError)
+        } else {
+          documentId = docData.id
+
+          // 3. Sauvegarder les techniciens
+          const techniciens = []
+          
+          // Technicien principal
+          if (formData.technicienPrincipal?.user_id) {
+            techniciens.push({
+              document_id: documentId,
+              user_id: formData.technicienPrincipal.user_id,
+              role: 'principal',
+              temps_intervention: parseFloat(formData.technicienPrincipal.temps_intervention) || null
+            })
+          }
+
+          // Autres techniciens
+          if (formData.autresTechniciens?.length > 0) {
+            formData.autresTechniciens.forEach(tech => {
+              if (tech.user_id) {
+                techniciens.push({
+                  document_id: documentId,
+                  user_id: tech.user_id,
+                  role: 'intervenant',
+                  temps_intervention: parseFloat(tech.temps_intervention) || null
+                })
+              }
+            })
+          }
+
+          if (techniciens.length > 0) {
+            const { error: techError } = await supabase
+              .from('formia_document_technicians')
+              .insert(techniciens)
+
+            if (techError) {
+              console.error('Technicians save error:', techError)
             }
-          })
-        }
-
-        if (techniciens.length > 0) {
-          const { error: techError } = await supabase
-            .from('formia_document_technicians')
-            .insert(techniciens)
-
-          if (techError) {
-            console.error('Technicians save error:', techError)
           }
         }
-      }
       } catch (dbError) {
         console.error('Database operation error:', dbError)
       }
