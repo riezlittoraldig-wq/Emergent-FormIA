@@ -498,14 +498,15 @@ export default function FormIAAdminPage() {
                       { key: 'code_chantier', label: 'Code chantier', required: true, example: 'GX265947VEN' },
                       { key: 'client_name', label: 'Nom client', required: true, example: 'Camping Bel Air' },
                       { key: 'address', label: 'Adresse', example: '6 Allée de la chevreuse' },
+                      { key: 'adress_2', label: 'Complément adresse', example: 'Bâtiment B' },
                       { key: 'postal_code', label: 'Code postal', example: '85180' },
                       { key: 'city', label: 'Ville', example: 'Les sables d\'olonne' },
                       { key: 'responsable_affaire', label: 'Responsable', example: 'Justine Palette' },
                       { key: 'emails', label: 'Emails (séparés par virgule)', example: 'contact1@mail.com, contact2@mail.com' }
                     ]}
                     exampleData={[
-                      { code_chantier: 'GX265947VEN', client_name: 'Camping Bel Air', address: '6 Allée de la chevreuse', postal_code: '85180', city: 'Les sables d\'olonne', responsable_affaire: 'Justine Palette', emails: 'justine.palette@example.com' },
-                      { code_chantier: 'CH202501', client_name: 'Hôtel Les Sables', address: '12 avenue de la mer', postal_code: '85100', city: 'Les Sables-d\'Olonne', responsable_affaire: 'Pierre Martin', emails: 'p.martin@hotel.fr, contact@hotel.fr' }
+                      { code_chantier: 'GX265947VEN', client_name: 'Camping Bel Air', address: '6 Allée de la chevreuse', adress_2: '', postal_code: '85180', city: 'Les sables d\'olonne', responsable_affaire: 'Justine Palette', emails: 'justine.palette@example.com' },
+                      { code_chantier: 'CH202501', client_name: 'Hôtel Les Sables', address: '12 avenue de la mer', adress_2: 'Étage 2', postal_code: '85100', city: 'Les Sables-d\'Olonne', responsable_affaire: 'Pierre Martin', emails: 'p.martin@hotel.fr, contact@hotel.fr' }
                     ]}
                     onImport={async (data) => {
                       const results = await Promise.allSettled(
@@ -520,6 +521,7 @@ export default function FormIAAdminPage() {
                             code_chantier: row.code_chantier,
                             client_name: row.client_name,
                             address: row.address || null,
+                            adress_2: row.adress_2 || null,
                             postal_code: row.postal_code || null,
                             city: row.city || null,
                             responsable_affaire: row.responsable_affaire || null,
