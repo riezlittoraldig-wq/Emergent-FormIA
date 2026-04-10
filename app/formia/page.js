@@ -29,8 +29,12 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    loadDashboardData()
-  }, [profile])
+    if (profile) {
+      loadDashboardData()
+    } else {
+      setLoading(false)
+    }
+  }, []) // Charger une seule fois au montage
 
   const loadDashboardData = async () => {
     if (!profile) {

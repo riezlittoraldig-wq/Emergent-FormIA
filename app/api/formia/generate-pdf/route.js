@@ -17,47 +17,50 @@ export async function POST(request) {
     // LOG: Vérifier le format des contrôles
     console.log('=== DEBUG PDF GENERATION ===')
     console.log('controlesAccessoires type:', typeof formData.controlesAccessoires)
-    console.log('controlesAccessoires sample:', JSON.stringify(formData.controlesAccessoires?.slice(0, 2)))
+    console.log('controlesAccessoires[0]:', formData.controlesAccessoires?.[0])
+    console.log('controlesAccessoires[0].label:', formData.controlesAccessoires?.[0]?.label)
+    console.log('controlesAccessoires[0].label type:', typeof formData.controlesAccessoires?.[0]?.label)
     
     // Nettoyer les données pour éviter les objets React non sérialisables
+    const cleanControles = (controles) => {
+      if (!Array.isArray(controles)) return []
+      
+      return controles.map((c, idx) => {
+        console.log(`Controle ${idx}:`, c, 'type:', typeof c)
+        
+        // Si c'est juste une string, créer l'objet
+        if (typeof c === 'string') {
+          return { label: c, vu: false, observations: '' }
+        }
+        
+        // Si c'est un objet
+        if (typeof c === 'object' && c !== null) {
+          const label = c.label || c.toString()
+          console.log(`  -> label extracted: "${label}" (type: ${typeof label})`)
+          
+          return {
+            label: typeof label === 'string' ? label : String(label),
+            vu: Boolean(c.vu),
+            observations: typeof c.observations === 'string' ? c.observations : ''
+          }
+        }
+        
+        // Fallback
+        return { label: String(c), vu: false, observations: '' }
+      })
+    }
+
     const cleanedFormData = {
       ...formData,
-      controlesAccessoires: Array.isArray(formData.controlesAccessoires) 
-        ? formData.controlesAccessoires.map(c => ({
-            label: c?.label || c || '',
-            vu: Boolean(c?.vu),
-            observations: c?.observations || ''
-          }))
-        : [],
-      controlesDisjoncteurBT: Array.isArray(formData.controlesDisjoncteurBT)
-        ? formData.controlesDisjoncteurBT.map(c => ({
-            label: c?.label || c || '',
-            vu: Boolean(c?.vu),
-            observations: c?.observations || ''
-          }))
-        : [],
-      controlesCellulesHTA: Array.isArray(formData.controlesCellulesHTA)
-        ? formData.controlesCellulesHTA.map(c => ({
-            label: c?.label || c || '',
-            vu: Boolean(c?.vu),
-            observations: c?.observations || ''
-          }))
-        : [],
-      controlesTransformateur: Array.isArray(formData.controlesTransformateur)
-        ? formData.controlesTransformateur.map(c => ({
-            label: c?.label || c || '',
-            vu: Boolean(c?.vu),
-            observations: c?.observations || ''
-          }))
-        : [],
-      controlesLocalPoste: Array.isArray(formData.controlesLocalPoste)
-        ? formData.controlesLocalPoste.map(c => ({
-            label: c?.label || c || '',
-            vu: Boolean(c?.vu),
-            observations: c?.observations || ''
-          }))
-        : []
+      controlesAccessoires: cleanControles(formData.controlesAccessoires),
+      controlesDisjoncteurBT: cleanControles(formData.controlesDisjoncteurBT),
+      controlesCellulesHTA: cleanControles(formData.controlesCellulesHTA),
+      controlesTransformateur: cleanControles(formData.controlesTransformateur),
+      controlesLocalPoste: cleanControles(formData.controlesLocalPoste)
     }
+    
+    console.log('Cleaned controlesAccessoires[0]:', cleanedFormData.controlesAccessoires?.[0])
+    console.log('=== END DEBUG ===')
 
     // Générer le PDF avec les données nettoyées
     const pdfDoc = React.createElement(MaintenancePDFDocument, { formData: cleanedFormData, entity })
