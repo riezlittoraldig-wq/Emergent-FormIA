@@ -719,8 +719,11 @@ function ControleTable({ data }) {
             <View style={styles.tableColCheck}>
               <Text style={styles.checkmark}>{item.vu ? '☑' : '☐'}</Text>
             </View>
+            <View style={styles.tableColLabel}>
+              <Text style={{ fontSize: 10 }}>{String(item.label || '-')}</Text>
+            </View>
             <View style={styles.tableColObs}>
-              <Text>{String(item.label || item.observations || '-')}</Text>
+              <Text style={{ fontSize: 9, color: '#555' }}>{item.observations || ''}</Text>
             </View>
           </View>
         )
