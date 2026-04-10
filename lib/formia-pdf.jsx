@@ -706,20 +706,25 @@ export function MaintenancePDFDocument({ formData, entity }) {
 // Composant pour les tableaux de contrôles
 function ControleTable({ data }) {
   // Afficher le tableau même si vide, pour montrer les cases non cochées
-  if (!data) return null
+  if (!data || !Array.isArray(data)) return null
   
   return (
     <View style={{ marginBottom: 20 }}>
-      {data.map((item, index) => (
-        <View key={index} style={styles.tableRow}>
-          <View style={styles.tableColCheck}>
-            <Text style={styles.checkmark}>{item.vu ? '☑' : '☐'}</Text>
+      {data.map((item, index) => {
+        // S'assurer que item est bien un objet
+        if (typeof item !== 'object' || item === null) return null
+        
+        return (
+          <View key={index} style={styles.tableRow}>
+            <View style={styles.tableColCheck}>
+              <Text style={styles.checkmark}>{item.vu ? '☑' : '☐'}</Text>
+            </View>
+            <View style={styles.tableColObs}>
+              <Text>{String(item.label || item.observations || '-')}</Text>
+            </View>
           </View>
-          <View style={styles.tableColObs}>
-            <Text>{item.label || item.observations || '-'}</Text>
-          </View>
-        </View>
-      ))}
+        )
+      })}
     </View>
   )
 }

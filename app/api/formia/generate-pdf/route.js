@@ -14,8 +14,53 @@ export async function POST(request) {
   try {
     const { formData, entity, agency, saveToDatabase = true, sendEmail = true, userId } = await request.json()
 
-    // Générer le PDF
-    const pdfDoc = React.createElement(MaintenancePDFDocument, { formData, entity })
+    // LOG: Vérifier le format des contrôles
+    console.log('=== DEBUG PDF GENERATION ===')
+    console.log('controlesAccessoires type:', typeof formData.controlesAccessoires)
+    console.log('controlesAccessoires sample:', JSON.stringify(formData.controlesAccessoires?.slice(0, 2)))
+    
+    // Nettoyer les données pour éviter les objets React non sérialisables
+    const cleanedFormData = {
+      ...formData,
+      controlesAccessoires: Array.isArray(formData.controlesAccessoires) 
+        ? formData.controlesAccessoires.map(c => ({
+            label: String(c?.label || ''),
+            vu: Boolean(c?.vu),
+            observations: String(c?.observations || '')
+          }))
+        : [],
+      controlesDisjoncteurBT: Array.isArray(formData.controlesDisjoncteurBT)
+        ? formData.controlesDisjoncteurBT.map(c => ({
+            label: String(c?.label || ''),
+            vu: Boolean(c?.vu),
+            observations: String(c?.observations || '')
+          }))
+        : [],
+      controlesCellulesHTA: Array.isArray(formData.controlesCellulesHTA)
+        ? formData.controlesCellulesHTA.map(c => ({
+            label: String(c?.label || ''),
+            vu: Boolean(c?.vu),
+            observations: String(c?.observations || '')
+          }))
+        : [],
+      controlesTransformateur: Array.isArray(formData.controlesTransformateur)
+        ? formData.controlesTransformateur.map(c => ({
+            label: String(c?.label || ''),
+            vu: Boolean(c?.vu),
+            observations: String(c?.observations || '')
+          }))
+        : [],
+      controlesLocalPoste: Array.isArray(formData.controlesLocalPoste)
+        ? formData.controlesLocalPoste.map(c => ({
+            label: String(c?.label || ''),
+            vu: Boolean(c?.vu),
+            observations: String(c?.observations || '')
+          }))
+        : []
+    }
+
+    // Générer le PDF avec les données nettoyées
+    const pdfDoc = React.createElement(MaintenancePDFDocument, { formData: cleanedFormData, entity })
     const stream = await renderToStream(pdfDoc)
     
     const chunks = []
