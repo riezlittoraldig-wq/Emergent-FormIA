@@ -273,6 +273,17 @@ export default function DashboardPage() {
                   <div 
                     key={doc.id} 
                     className="flex items-center justify-between p-6 hover:bg-slate-50 transition-colors group cursor-pointer"
+                    onClick={() => {
+                      if (doc.status === 'draft') {
+                        // Ouvrir le brouillon pour édition
+                        router.push(`/formia/nouveau?draft=${doc.id}`)
+                      } else {
+                        // Ouvrir le PDF du rapport terminé
+                        if (doc.pdf_url) {
+                          window.open(doc.pdf_url, '_blank')
+                        }
+                      }
+                    }}
                   >
                     <div className="flex items-center gap-4">
                       <div className="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center group-hover:bg-slate-900 transition-colors">

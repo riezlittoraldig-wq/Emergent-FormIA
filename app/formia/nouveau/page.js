@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useAuth } from '@/lib/formia-auth-context'
+import { useSearchParams } from 'next/navigation'
 import { MaintenanceHTBTForm } from '@/components/formia/MaintenanceHTBTForm'
 import { supabase } from '@/lib/formia-supabase'
 import { Button } from '@/components/ui/button'
@@ -10,12 +11,16 @@ import { Building2, ArrowLeft } from 'lucide-react'
 
 export default function NouveauRapportPage() {
   const { profile } = useAuth()
+  const searchParams = useSearchParams()
+  const draftId = searchParams.get('draft')
+  
   const [loading, setLoading] = useState(true)
   const [entities, setEntities] = useState([])
   const [agencies, setAgencies] = useState([])
   const [selectedEntity, setSelectedEntity] = useState(null)
   const [selectedAgency, setSelectedAgency] = useState(null)
   const [step, setStep] = useState('select-entity')
+  const [draftData, setDraftData] = useState(null)
 
   useEffect(() => {
     loadData()
@@ -23,6 +28,28 @@ export default function NouveauRapportPage() {
 
   const loadData = async () => {
     try {
+      // Charger le brouillon si un ID est passé
+      if (draftId) {
+        const { data: draft, error: draftError } = await supabase
+          .from('formia_documents')
+          .select('*, formia_entities(*), formia_agencies(*)')
+          .eq('id', draftId)
+          .single()
+
+        if (draftError) {
+          console.error('Error loading draft:', draftError)
+        } else if (draft) {
+          // Passer directement au formulaire avec les données du brouillon
+          setSelectedEntity(draft.formia_entities)
+          setSelectedAgency(draft.formia_agencies)
+          setDraftData(draft.data_json)
+          setStep('form')
+          setLoading(false)
+          return
+        }
+      }
+
+      // Chargement normal
       const { data: entitiesData } = await supabase
         .from('formia_entities')
         .select('*')
@@ -174,6 +201,8 @@ export default function NouveauRapportPage() {
             entity={selectedEntity}
             agency={selectedAgency}
             documentType="maintenance_htbt"
+            initialData={draftData}
+            draftId={draftId}
             onBack={handleBack}
           />
         )}

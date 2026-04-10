@@ -21,14 +21,20 @@ import { TABLEAUX_CONTROLES } from '@/lib/formia-config'
 import { Save, FileDown, Eye, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 
-export function MaintenanceHTBTForm({ entity, agency, documentType, onBack }) {
+export function MaintenanceHTBTForm({ entity, agency, documentType, initialData, draftId, onBack }) {
   const [activeTab, setActiveTab] = useState('general')
   const [saving, setSaving] = useState(false)
   const [showPreview, setShowPreview] = useState(false)
   const { user, profile } = useAuth()
   
-  const [formData, setFormData] = useState({
-    documentNumber: `${Date.now()}`,
+  // Initialiser avec les données du brouillon si disponibles
+  const getInitialFormData = () => {
+    if (initialData) {
+      return initialData
+    }
+    
+    return {
+      documentNumber: `${Date.now()}`,
     codeChantier: '',
     clientName: '',
     numeroAffaire: '',
@@ -86,11 +92,14 @@ export function MaintenanceHTBTForm({ entity, agency, documentType, onBack }) {
       temps_intervention: ''
     },
     autresTechniciens: []
-  })
+  }
+}
 
-  // Mettre à jour le technicien principal quand le profil est chargé
-  useEffect(() => {
-    if (profile && user) {
+const [formData, setFormData] = useState(getInitialFormData())
+
+// Mettre à jour le technicien principal quand le profil est chargé (sauf si brouillon)
+useEffect(() => {
+  if (profile && user && !initialData) {
       setFormData(prev => ({
         ...prev,
         technicienPrincipal: {
