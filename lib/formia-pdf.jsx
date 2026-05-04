@@ -731,7 +731,21 @@ function ControleTable({ data }) {
         return (
           <View key={index} style={styles.tableRow}>
             <View style={styles.tableColCheck}>
-              <Text style={styles.checkmark}>{item.vu ? '☑' : '☐'}</Text>
+              {/* Case à cocher dessinée nativement — pas de Unicode */}
+              <View style={{
+                width: 14,
+                height: 14,
+                border: '1.5px solid #E63946',
+                borderRadius: 2,
+                margin: 'auto',
+                backgroundColor: item.vu ? '#E63946' : '#fff',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}>
+                {item.vu && (
+                  <Text style={{ color: '#fff', fontSize: 9, fontWeight: 'bold', marginTop: -1 }}>✓</Text>
+                )}
+              </View>
             </View>
             <View style={styles.tableColLabel}>
               <Text style={{ fontSize: 10 }}>{String(item.label || '-')}</Text>
