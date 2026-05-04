@@ -7,6 +7,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { LogOut, User, Settings, Menu } from 'lucide-react'
 import { useState } from 'react'
+import { OfflineBanner } from '@/components/formia/OfflineBanner'
 
 function FormIAHeader() {
   const { user, profile, signOut, isAuthenticated } = useAuth()
@@ -211,6 +212,7 @@ function FormIALayoutContent({ children }) {
         <main className="flex-1">
           {children}
         </main>
+        <OfflineBanner />
       </div>
     </ProtectedRoute>
   )
