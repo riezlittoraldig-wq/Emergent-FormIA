@@ -10,7 +10,8 @@ import { Textarea } from '@/components/ui/textarea'
 import { supabase } from '@/lib/formia-supabase'
 import { ImportExcel } from '@/components/formia/ImportExcel'
 import { EntitiesTab } from '@/components/formia/EntitiesTab'
-import { Plus, Edit, Trash2, Save, X, Building2, Briefcase, Building, Upload, MapPin, Users } from 'lucide-react'
+import { CloudConfigTab } from '@/components/formia/CloudConfigTab'
+import { Plus, Edit, Trash2, Save, X, Building2, Briefcase, Building, Upload, MapPin, Users, Cloud } from 'lucide-react'
 import { toast } from 'sonner'
 
 export default function FormIAAdminPage() {
@@ -257,6 +258,10 @@ export default function FormIAAdminPage() {
             <TabsTrigger value="users">
               <Users className="w-4 h-4 mr-2" />
               Utilisateurs
+            </TabsTrigger>
+            <TabsTrigger value="cloud">
+              <Cloud className="w-4 h-4 mr-2" />
+              Intégrations
             </TabsTrigger>
           </TabsList>
 
@@ -759,6 +764,10 @@ export default function FormIAAdminPage() {
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+          {/* Tab Intégrations Cloud */}
+          <TabsContent value="cloud">
+            <CloudConfigTab entities={entities} />
           </TabsContent>
         </Tabs>
       </div>
