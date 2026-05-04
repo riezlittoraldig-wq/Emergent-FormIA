@@ -328,11 +328,19 @@ useEffect(() => {
           </Card>
 
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-4 lg:grid-cols-9 mb-6">
-              {tabs.map(tab => (
-                <TabsTrigger key={tab.id} value={tab.id}>{tab.label}</TabsTrigger>
-              ))}
-            </TabsList>
+            <div className="mb-6 -mx-1">
+              <TabsList className="flex w-max min-w-full overflow-x-auto scrollbar-hide rounded-lg p-1 gap-0.5">
+                {tabs.map(tab => (
+                  <TabsTrigger
+                    key={tab.id}
+                    value={tab.id}
+                    className="flex-shrink-0 text-xs px-3 py-1.5 whitespace-nowrap"
+                  >
+                    {tab.label}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+            </div>
 
             {/* Onglet 1: Informations générales */}
             <TabsContent value="general">
