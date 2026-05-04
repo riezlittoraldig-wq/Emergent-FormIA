@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { TABLEAUX_CONTROLES } from '@/lib/formia-config'
+import { uploadToCloud } from '@/lib/formia-cloud'
 import { renderToStream } from '@react-pdf/renderer'
 import { MaintenancePDFDocument } from '@/lib/formia-pdf'
 import { sendDocumentEmail } from '@/lib/formia-email'
@@ -141,6 +142,40 @@ export async function POST(request) {
         }
       } catch (dbError) {
         console.error('Database operation error:', dbError)
+      }
+    }
+
+    // Upload cloud (Google Drive + FTP) si configuré pour cette entité
+    if (entity?.id) {
+      try {
+        const { data: cloudConfig } = await supabase
+          .from('formia_cloud_config')
+          .select('*')
+          .eq('entity_id', entity.id)
+          .single()
+
+        if (cloudConfig && (cloudConfig.drive_enabled || cloudConfig.ftp_enabled)) {
+          const fileName = `Rapport_${formData.documentNumber}_${formData.clientName?.replace(/[^a-z0-9]/gi, '_')}.pdf`
+          const cloudResults = await uploadToCloud(pdfBuffer, fileName, cloudConfig)
+
+          if (cloudResults.errors.length > 0) {
+            console.warn('[Cloud] Erreurs upload:', cloudResults.errors)
+          }
+
+          // Mettre à jour le document avec les URLs cloud
+          if (documentId && (cloudResults.drive || cloudResults.ftp)) {
+            await supabase
+              .from('formia_documents')
+              .update({
+                cloud_drive_url: cloudResults.drive?.url || null,
+                cloud_ftp_path: cloudResults.ftp?.url || null
+              })
+              .eq('id', documentId)
+          }
+        }
+      } catch (cloudErr) {
+        console.error('[Cloud] Erreur upload cloud:', cloudErr.message)
+        // Non bloquant — le PDF est déjà généré
       }
     }
 
