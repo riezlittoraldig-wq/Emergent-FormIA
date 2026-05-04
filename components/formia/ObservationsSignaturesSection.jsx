@@ -1,9 +1,10 @@
 'use client'
 
 import { Textarea } from '@/components/ui/textarea'
-import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { SignaturePad } from './SignaturePad'
+import { FileSignature } from 'lucide-react'
 
 export function ObservationsSignaturesSection({ data, onChange }) {
   const updateField = (field, value) => {
@@ -12,12 +13,13 @@ export function ObservationsSignaturesSection({ data, onChange }) {
 
   return (
     <div className="space-y-6">
+      {/* Observations */}
       <Card>
         <CardHeader>
           <CardTitle>Observations particulières</CardTitle>
         </CardHeader>
         <CardContent>
-          <Textarea 
+          <Textarea
             placeholder="Entrez vos observations particulières ici..."
             value={data.observations || ''}
             onChange={(e) => updateField('observations', e.target.value)}
@@ -26,32 +28,26 @@ export function ObservationsSignaturesSection({ data, onChange }) {
         </CardContent>
       </Card>
 
+      {/* Signatures manuscrites */}
       <Card>
         <CardHeader>
-          <CardTitle>Signatures</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <FileSignature className="w-5 h-5" />
+            Signatures
+          </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid md:grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <Label htmlFor="sig-intervenant">Signature Intervenant</Label>
-              <Input 
-                id="sig-intervenant"
-                placeholder="Nom de l'intervenant"
-                value={data.signatureIntervenant || ''}
-                onChange={(e) => updateField('signatureIntervenant', e.target.value)}
-              />
-              <p className="text-xs text-slate-500">Le nom sera affiché dans la section signature du PDF</p>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="sig-client">Signature Client</Label>
-              <Input 
-                id="sig-client"
-                placeholder="Nom du client"
-                value={data.signatureClient || ''}
-                onChange={(e) => updateField('signatureClient', e.target.value)}
-              />
-              <p className="text-xs text-slate-500">Le nom sera affiché dans la section signature du PDF</p>
-            </div>
+          <div className="grid md:grid-cols-2 gap-8">
+            <SignaturePad
+              label="Signature Intervenant"
+              value={data.signatureIntervenant || ''}
+              onChange={(base64) => updateField('signatureIntervenant', base64)}
+            />
+            <SignaturePad
+              label="Signature Client"
+              value={data.signatureClient || ''}
+              onChange={(base64) => updateField('signatureClient', base64)}
+            />
           </div>
         </CardContent>
       </Card>
