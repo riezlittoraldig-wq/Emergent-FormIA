@@ -688,11 +688,25 @@ export function MaintenancePDFDocument({ formData, entity }) {
         <View style={styles.signaturesBox}>
           <View style={styles.signatureSection}>
             <Text style={styles.signatureLabel}>Intervenant</Text>
-            <Text style={{ marginTop: 40 }}>{formData.observationsSignatures?.signatureIntervenant || ''}</Text>
+            {formData.observationsSignatures?.signatureIntervenant ? (
+              <Image
+                src={formData.observationsSignatures.signatureIntervenant}
+                style={{ width: '100%', height: 60, objectFit: 'contain', marginTop: 8 }}
+              />
+            ) : (
+              <View style={{ marginTop: 8, height: 60, borderBottom: '1px solid #ccc' }} />
+            )}
           </View>
           <View style={styles.signatureSection}>
             <Text style={styles.signatureLabel}>Client</Text>
-            <Text style={{ marginTop: 40 }}>{formData.observationsSignatures?.signatureClient || ''}</Text>
+            {formData.observationsSignatures?.signatureClient ? (
+              <Image
+                src={formData.observationsSignatures.signatureClient}
+                style={{ width: '100%', height: 60, objectFit: 'contain', marginTop: 8 }}
+              />
+            ) : (
+              <View style={{ marginTop: 8, height: 60, borderBottom: '1px solid #ccc' }} />
+            )}
           </View>
         </View>
 
