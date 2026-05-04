@@ -2,7 +2,7 @@ import './globals.css'
 import { Toaster } from 'sonner'
 
 export const metadata = {
-  title: 'FormIA - Générateur de formulaires',
+  title: 'AllezIA - Rapports de maintenance',
   description: 'Application professionnelle de génération de formulaires pour TaskIA',
 }
 
