@@ -1,7 +1,7 @@
 {
-  "name": "FormIA — Rapports Maintenance",
-  "short_name": "FormIA",
-  "description": "Générateur de rapports de maintenance HT/BT",
+  "name": "AllezIA — Rapports Maintenance",
+  "short_name": "AllezIA",
+  "description": "Générateur de rapports de maintenance HT/BT — Groupe ALLEZ",
   "start_url": "/formia",
   "display": "standalone",
   "background_color": "#ffffff",
@@ -21,6 +21,9 @@
       "purpose": "any maskable"
     }
   ],
-  "categories": ["productivity", "business"],
+  "categories": [
+    "productivity",
+    "business"
+  ],
   "lang": "fr-FR"
 }
