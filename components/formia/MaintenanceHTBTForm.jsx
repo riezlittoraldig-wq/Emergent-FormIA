@@ -18,14 +18,32 @@ import { PDFPreview } from './PDFPreview'
 import { supabase } from '@/lib/formia-supabase'
 import { useAuth } from '@/lib/formia-auth-context'
 import { TABLEAUX_CONTROLES } from '@/lib/formia-config'
-import { Save, FileDown, Eye, Loader2 } from 'lucide-react'
+import { getNetworkStatus } from '@/lib/formia-offline'
+import { saveDraftLocally, enqueue } from '@/lib/formia-db'
+import { Save, FileDown, Eye, Loader2, WifiOff } from 'lucide-react'
 import { toast } from 'sonner'
 
 export function MaintenanceHTBTForm({ entity, agency, documentType, initialData, draftId, onBack }) {
   const [activeTab, setActiveTab] = useState('general')
   const [saving, setSaving] = useState(false)
   const [showPreview, setShowPreview] = useState(false)
+  const [isOnline, setIsOnline] = useState(true)
+  const [localDraftId, setLocalDraftId] = useState(null)
   const { user, profile } = useAuth()
+
+  // Suivi état réseau
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    setIsOnline(navigator.onLine)
+    const handleOnline = () => setIsOnline(true)
+    const handleOffline = () => setIsOnline(false)
+    window.addEventListener('online', handleOnline)
+    window.addEventListener('offline', handleOffline)
+    return () => {
+      window.removeEventListener('online', handleOnline)
+      window.removeEventListener('offline', handleOffline)
+    }
+  }, [])
   
   // Initialiser avec les données du brouillon si disponibles
   const getInitialFormData = () => {
@@ -203,33 +221,53 @@ useEffect(() => {
   const saveDraft = async () => {
     setSaving(true)
     try {
-      const docData = {
-        document_number: formData.documentNumber,
-        entity_id: entity.id,
-        agency_id: agency.id,
-        document_type: 'maintenance_htbt',
-        client_name: formData.clientName,
-        data_json: formData,
-        status: 'draft',
-        created_by: profile?.user_id || user?.id
+      const online = typeof navigator !== 'undefined' ? navigator.onLine : true
+
+      if (online) {
+        // ─ En ligne : sauvegarde directe Supabase ─
+        const docData = {
+          document_number: formData.documentNumber,
+          entity_id: entity.id,
+          agency_id: agency?.id,
+          document_type: 'maintenance_htbt',
+          client_name: formData.clientName,
+          data_json: formData,
+          status: 'draft',
+          created_by: profile?.user_id || user?.id
+        }
+
+        const { data, error } = await supabase
+          .from('formia_documents')
+          .insert(docData)
+          .select()
+          .single()
+
+        if (error) throw error
+        toast.success('✅ Brouillon enregistré !')
+      } else {
+        // ─ Hors ligne : sauvegarde IndexedDB + file d'attente sync ─
+        const newLocalId = await saveDraftLocally({
+          localId: localDraftId,
+          entityId: entity.id,
+          agencyId: agency?.id,
+          formData
+        })
+        setLocalDraftId(newLocalId)
+
+        await enqueue('save_draft', {
+          localId: newLocalId,
+          entityId: entity.id,
+          agencyId: agency?.id,
+          formData,
+          documentNumber: formData.documentNumber,
+          clientName: formData.clientName
+        })
+
+        toast.success('💾 Brouillon sauvegardé localement — sera synchronisé à la reconnexion')
       }
-
-      const { data, error } = await supabase
-        .from('formia_documents')
-        .insert(docData)
-        .select()
-        .single()
-
-      if (error) {
-        console.error('Error saving draft:', error)
-        throw error
-      }
-
-      toast.success('✅ Brouillon enregistré avec succès !')
-      console.log('Draft saved:', data)
     } catch (error) {
       console.error('Error saving draft:', error)
-      toast.error(`❌ Erreur : ${error.message || 'Impossible d\'enregistrer'}`)
+      toast.error(`❌ Erreur : ${error.message || "Impossible d'enregistrer"}`)
     } finally {
       setSaving(false)
     }
@@ -265,11 +303,16 @@ useEffect(() => {
                 <div className="flex gap-2">
                   <Button 
                     variant="outline" 
-                    onClick={handleSaveDraft}
+                    onClick={saveDraft}
                     disabled={saving}
                   >
-                    {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
-                    Enregistrer le brouillon
+                    {saving
+                      ? <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      : isOnline
+                        ? <Save className="w-4 h-4 mr-2" />
+                        : <WifiOff className="w-4 h-4 mr-2 text-amber-500" />
+                    }
+                    {isOnline ? 'Enregistrer le brouillon' : 'Sauvegarder hors ligne'}
                   </Button>
                 </div>
                 <Button 
@@ -604,10 +647,15 @@ useEffect(() => {
                           <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                           Enregistrement...
                         </>
-                      ) : (
+                      ) : isOnline ? (
                         <>
                           <Save className="w-4 h-4 mr-2" />
                           Enregistrer brouillon
+                        </>
+                      ) : (
+                        <>
+                          <WifiOff className="w-4 h-4 mr-2 text-amber-500" />
+                          Sauvegarder hors ligne
                         </>
                       )}
                     </Button>
