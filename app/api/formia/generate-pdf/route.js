@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { TABLEAUX_CONTROLES } from '@/lib/formia-config'
 import { renderToStream } from '@react-pdf/renderer'
 import { MaintenancePDFDocument } from '@/lib/formia-pdf'
 import { sendDocumentEmail } from '@/lib/formia-email'
@@ -14,53 +15,31 @@ export async function POST(request) {
   try {
     const { formData, entity, agency, saveToDatabase = true, sendEmail = true, userId } = await request.json()
 
-    // LOG: Vérifier le format des contrôles
-    console.log('=== DEBUG PDF GENERATION ===')
-    console.log('controlesAccessoires type:', typeof formData.controlesAccessoires)
-    console.log('controlesAccessoires[0]:', formData.controlesAccessoires?.[0])
-    console.log('controlesAccessoires[0].label:', formData.controlesAccessoires?.[0]?.label)
-    console.log('controlesAccessoires[0].label type:', typeof formData.controlesAccessoires?.[0]?.label)
-    
-    // Nettoyer les données pour éviter les objets React non sérialisables
-    const cleanControles = (controles) => {
-      if (!Array.isArray(controles)) return []
+    // Reconstruire les contrôles en fusionnant les labels depuis la config (source de vérité)
+    // et les valeurs saisies par l'utilisateur (vu, observations)
+    const cleanControles = (controles, configKey) => {
+      const configControles = TABLEAUX_CONTROLES[configKey]?.controles || []
       
-      return controles.map((c, idx) => {
-        console.log(`Controle ${idx}:`, c, 'type:', typeof c)
-        
-        // Si c'est juste une string, créer l'objet
-        if (typeof c === 'string') {
-          return { label: c, vu: false, observations: '' }
+      return configControles.map((configItem, idx) => {
+        const userItem = Array.isArray(controles) ? controles[idx] : null
+        return {
+          label: configItem.label,                              // label garanti depuis la config
+          vu: userItem ? Boolean(userItem.vu) : false,
+          observations: userItem?.observations && typeof userItem.observations === 'string'
+            ? userItem.observations
+            : ''
         }
-        
-        // Si c'est un objet
-        if (typeof c === 'object' && c !== null) {
-          const label = c.label || c.toString()
-          console.log(`  -> label extracted: "${label}" (type: ${typeof label})`)
-          
-          return {
-            label: typeof label === 'string' ? label : String(label),
-            vu: Boolean(c.vu),
-            observations: typeof c.observations === 'string' ? c.observations : ''
-          }
-        }
-        
-        // Fallback
-        return { label: String(c), vu: false, observations: '' }
       })
     }
 
     const cleanedFormData = {
       ...formData,
-      controlesAccessoires: cleanControles(formData.controlesAccessoires),
-      controlesDisjoncteurBT: cleanControles(formData.controlesDisjoncteurBT),
-      controlesCellulesHTA: cleanControles(formData.controlesCellulesHTA),
-      controlesTransformateur: cleanControles(formData.controlesTransformateur),
-      controlesLocalPoste: cleanControles(formData.controlesLocalPoste)
+      controlesAccessoires:    cleanControles(formData.controlesAccessoires,    'accessoiresSecurite'),
+      controlesDisjoncteurBT:  cleanControles(formData.controlesDisjoncteurBT,  'disjoncteurBT'),
+      controlesCellulesHTA:    cleanControles(formData.controlesCellulesHTA,    'cellulesHTA'),
+      controlesTransformateur: cleanControles(formData.controlesTransformateur, 'transformateur'),
+      controlesLocalPoste:     cleanControles(formData.controlesLocalPoste,     'localPoste')
     }
-    
-    console.log('Cleaned controlesAccessoires[0]:', cleanedFormData.controlesAccessoires?.[0])
-    console.log('=== END DEBUG ===')
 
     // Générer le PDF avec les données nettoyées
     const pdfDoc = React.createElement(MaintenancePDFDocument, { formData: cleanedFormData, entity })
